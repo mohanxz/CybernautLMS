@@ -16,6 +16,8 @@ const SuperAdminChat = () => {
   const [messages, setMessages] = useState([]);
   const [msg, setMsg] = useState("");
   const chatRef = useRef();
+  const [adminStatus, setAdminStatus] = useState({});
+
 
   const room =
     chatType === "forum" && selectedTarget
@@ -82,6 +84,32 @@ useEffect(() => {
   fetchAdmins();
 }, []);
 
+useEffect(() => {
+  const fetchAdmins = async () => {
+    try {
+      const res = await axios.get("http://localhost:5006/chatrooms/admins");
+      const cleaned = res.data.map((name) => decodeURIComponent(name));
+      setAdmins(cleaned);
+
+      const statusRes = await axios.get("http://localhost:5006/chatrooms/admins/status");
+      const statusMap = {};
+      statusRes.data.forEach(({ name, online }) => {
+        statusMap[name] = online;
+      });
+      setAdminStatus(statusMap);
+
+      // Default selection
+      if (!selectedTarget && cleaned.length > 0) {
+        setChatType("admin");
+        setSelectedTarget(cleaned[0]);
+      }
+    } catch (err) {
+      console.error("❌ Failed to fetch admins or statuses", err);
+    }
+  };
+  fetchAdmins();
+}, []);
+
 
   useEffect(() => {
     if (!room) return;
@@ -98,6 +126,23 @@ useEffect(() => {
   useEffect(() => {
     chatRef.current?.scrollTo(0, chatRef.current.scrollHeight);
   }, [messages]);
+
+  useEffect(() => {
+  const interval = setInterval(async () => {
+    try {
+      const statusRes = await axios.get("http://localhost:5006/chatrooms/admins/status");
+      const statusMap = {};
+      statusRes.data.forEach(({ name, online }) => {
+        statusMap[name] = online;
+      });
+      setAdminStatus(statusMap);
+    } catch (e) {
+      console.error("Status polling failed:", e);
+    }
+  }, 20000); // 20 seconds
+
+  return () => clearInterval(interval);
+}, []);
 
   const sendMessage = () => {
     if (!msg.trim()) return;
@@ -130,13 +175,8 @@ useEffect(() => {
   return (
     <div className="p-0 m-0 flex h-[89vh] bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 text-gray-900 dark:text-white">
       {/* Sidebar */}
-      <div className="w-1/3 bg-white dark:bg-gray-900 text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700 p-6 overflow-y-auto shadow-lg">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
-            SuperAdmin Chat
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Manage all communications</p>
-        </div>
+      <div className="w-1/3 h-[92vh] bg-white dark:bg-gray-900 text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700 p-6 overflow-y-auto shadow-lg">
+        
 
         {/* Search Bar */}
         <div className="relative mb-6">
@@ -234,11 +274,17 @@ useEffect(() => {
                     }`}>
                       {admin[0].toUpperCase()}
                     </div>
-                    <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white dark:border-gray-900 rounded-full shadow-sm"></span>
+                    {adminStatus[admin] && (
+  <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white dark:border-gray-900 rounded-full shadow-sm"></span>
+)}
+
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-gray-900 dark:text-white truncate">{admin}</div>
-                    <div className="text-sm text-green-500 dark:text-green-400">Online</div>
+                    <div className={`text-sm font-medium ${adminStatus[admin] ? "text-green-500 dark:text-green-400" : "text-gray-400 dark:text-gray-500"}`}>
+  {adminStatus[admin] ? "Online" : "Offline"}
+</div>
+
                   </div>
                   {chatType === "admin" && selectedTarget === admin && (
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>

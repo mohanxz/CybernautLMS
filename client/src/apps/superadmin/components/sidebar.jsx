@@ -101,8 +101,13 @@ const handleLogout = async () => {
       </div>
 
       <aside
-        className="h-[100vh] w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 shadow-sm flex flex-col fixed top-0 left-0 z-40"
-      >
+  className="fixed top-0 left-0 z-40 w-64 h-screen bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 shadow-sm flex flex-col overflow-y-auto scrollbar-hide"
+>
+
+
+
+
+
       <div className="flex-1 flex flex-col">
         {/* Logo Section */}
         <div className="flex items-center gap-3 p-6 border-b border-gray-200 dark:border-gray-700">

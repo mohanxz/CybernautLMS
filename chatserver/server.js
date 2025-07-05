@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const socketIO = require('socket.io');
@@ -11,6 +12,8 @@ const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000'
 ];
+
+
 
 app.use(cors({
   origin: function (origin, callback) {
@@ -218,8 +221,35 @@ app.get('/chatrooms', (req, res) => {
 });
 
 
+const mongoose = require('mongoose');
 
-server.listen(PORT, () => {
-  console.log(`✅ Chat server listening on http://localhost:${PORT}`);
-});
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log('✅ Connected to MongoDB');
 
+    // ✅ Import model AFTER connection is established
+    const User = require('./models/User');
+
+    // ✅ Register the route after DB is ready
+    app.get('/chatrooms/admins/status', async (req, res) => {
+      try {
+        const admins = await User.find({ role: 'admin' }, 'name activeToken');
+        const statuses = admins.map(admin => ({
+          name: admin.name,
+          online: !!admin.activeToken
+        }));
+        res.json(statuses);
+      } catch (err) {
+        console.error("Error fetching admin statuses:", err);
+        res.status(500).json({ error: "Server error" });
+      }
+    });
+
+    // ✅ Start server after DB is connected
+    server.listen(PORT, () => {
+      console.log(`✅ Chat server listening on http://localhost:${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error('❌ MongoDB connection error:', err);
+  });
