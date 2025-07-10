@@ -137,42 +137,43 @@ const Courses = () => {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md space-y-4">
-            <h2 className="text-xl font-bold text-blue-700">
-              {isEditing ? "Edit Course" : "Add New Course"}
-            </h2>
-            <input
-              type="text"
-              placeholder="Course Name"
-              value={newCourseName}
-              onChange={(e) => setNewCourseName(e.target.value)}
-              className="w-full border px-3 py-2 rounded"
-            />
-            <input
-              type="text"
-              placeholder="Modules (comma separated)"
-              value={newModules}
-              onChange={(e) => setNewModules(e.target.value)}
-              className="w-full border px-3 py-2 rounded"
-            />
-            <div className="flex justify-end gap-4">
-              <button
-                onClick={() => setShowModal(false)}
-                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveCourse}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                {isEditing ? "Update Course" : "Add Course"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+  <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md space-y-4">
+      <h2 className="text-xl font-bold text-blue-700 dark:text-blue-300">
+        {isEditing ? "Edit Course" : "Add New Course"}
+      </h2>
+      <input
+        type="text"
+        placeholder="Course Name"
+        value={newCourseName}
+        onChange={(e) => setNewCourseName(e.target.value)}
+        className="w-full border border-gray-300 dark:border-gray-600 px-3 py-2 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+      />
+      <input
+        type="text"
+        placeholder="Modules (comma separated)"
+        value={newModules}
+        onChange={(e) => setNewModules(e.target.value)}
+        className="w-full border border-gray-300 dark:border-gray-600 px-3 py-2 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+      />
+      <div className="flex justify-end gap-4">
+        <button
+          onClick={() => setShowModal(false)}
+          className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-white rounded hover:bg-gray-400 dark:hover:bg-gray-500"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSaveCourse}
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded"
+        >
+          {isEditing ? "Update Course" : "Add Course"}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
 
       <ToastContainer />
     </div>

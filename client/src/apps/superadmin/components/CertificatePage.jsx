@@ -40,28 +40,37 @@ export default function CertificatePage() {
   };
 
   return (
-    <div className="p-6">
-      <h2 className="text-xl font-bold mb-4">Eligible Students for Certificates</h2>
-      <div className="space-y-2">
-        {students.map(student => (
-          <div key={student._id} className="flex items-center gap-4 p-2 border rounded">
-            <input
-              type="checkbox"
-              checked={selected.includes(student._id)}
-              onChange={() => toggleStudent(student._id)}
-            />
-            <span>{student.user.name} - {student.user.email}</span>
-          </div>
-        ))}
-      </div>
-      {selected.length > 0 && (
-        <button
-          className="mt-4 bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
-          onClick={handleGenerate}
+  <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
+    <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">
+      Eligible Students for Certificates
+    </h2>
+    <div className="space-y-2">
+      {students.map(student => (
+        <div
+          key={student._id}
+          className="flex items-center gap-4 p-3 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
         >
-          Generate Certificates
-        </button>
-      )}
+          <input
+            type="checkbox"
+            checked={selected.includes(student._id)}
+            onChange={() => toggleStudent(student._id)}
+            className="accent-blue-600 dark:accent-blue-400"
+          />
+          <span className="text-gray-900 dark:text-white">
+            {student.user.name} - {student.user.email}
+          </span>
+        </div>
+      ))}
     </div>
-  );
+    {selected.length > 0 && (
+      <button
+        className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded"
+        onClick={handleGenerate}
+      >
+        Generate Certificates
+      </button>
+    )}
+  </div>
+);
+
 }

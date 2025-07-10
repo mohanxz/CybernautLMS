@@ -160,80 +160,98 @@ const handleCancelDelete = () => {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-          <div className="bg-white p-8 rounded-lg w-full max-w-md">
-            <div className="flex justify-between mb-4">
-              <h3 className="text-xl font-bold text-gray-800">{isEditing ? 'Edit Lecturer' : 'Add New Lecturer'}</h3>
-              <button onClick={() => {
-                setShowModal(false);
-                setIsEditing(false);
-                setEditingId(null);
-                setFormData({ name: '', email: '', phone: '', salary: '', specialisation: '', upi: '', dob: '' });
-                }} className="text-gray-600 text-lg">×</button>
-            </div>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <input
-                type="text"
-                placeholder="Full Name"
-                className="w-full border px-4 py-2 rounded"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
-              />
-              <input
-                type="email"
-                placeholder="Email"
-                className="w-full border px-4 py-2 rounded"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                required
-              />
-              <input
-                type="text"
-                placeholder="Phone"
-                className="w-full border px-4 py-2 rounded"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                required
-              />
-              <input
-                type="text"
-                placeholder="Specialisation (comma separated)"
-                className="w-full border px-4 py-2 rounded"
-                value={formData.specialisation}
-                onChange={(e) => setFormData({ ...formData, specialisation: e.target.value })}
-                required
-              />
-              <input
-                type="text"
-                placeholder="UPI"
-                className="w-full border px-4 py-2 rounded"
-                value={formData.upi}
-                onChange={(e) => setFormData({ ...formData, upi: e.target.value })}
-              />
-              <input
-                type="date"
-                placeholder="Date of Birth"
-                className="w-full border px-4 py-2 rounded"
-                value={formData.dob}
-                onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
-                required
-              />
-              <input
-                type="number"
-                placeholder="Monthly Salary"
-                className="w-full border px-4 py-2 rounded"
-                value={formData.salary}
-                onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
-                required
-              />
-              <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
-                {isEditing ? 'Update Lecturer' : 'Add Lecturer'}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
+  <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div className="bg-white dark:bg-gray-800 p-8 rounded-lg w-full max-w-md shadow-xl">
+      <div className="flex justify-between mb-4">
+        <h3 className="text-xl font-bold text-gray-800 dark:text-white">
+          {isEditing ? 'Edit Lecturer' : 'Add New Lecturer'}
+        </h3>
+        <button
+          onClick={() => {
+            setShowModal(false);
+            setIsEditing(false);
+            setEditingId(null);
+            setFormData({
+              name: '',
+              email: '',
+              phone: '',
+              salary: '',
+              specialisation: '',
+              upi: '',
+              dob: ''
+            });
+          }}
+          className="text-gray-600 dark:text-gray-300 text-lg"
+        >
+          ×
+        </button>
+      </div>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <input
+          type="text"
+          placeholder="Full Name"
+          className="w-full border px-4 py-2 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 border-gray-300 dark:border-gray-600"
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          required
+        />
+        <input
+          type="email"
+          placeholder="Email"
+          className="w-full border px-4 py-2 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 border-gray-300 dark:border-gray-600"
+          value={formData.email}
+          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          required
+        />
+        <input
+          type="text"
+          placeholder="Phone"
+          className="w-full border px-4 py-2 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 border-gray-300 dark:border-gray-600"
+          value={formData.phone}
+          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+          required
+        />
+        <input
+          type="text"
+          placeholder="Specialisation (comma separated)"
+          className="w-full border px-4 py-2 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 border-gray-300 dark:border-gray-600"
+          value={formData.specialisation}
+          onChange={(e) => setFormData({ ...formData, specialisation: e.target.value })}
+          required
+        />
+        <input
+          type="text"
+          placeholder="UPI"
+          className="w-full border px-4 py-2 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 border-gray-300 dark:border-gray-600"
+          value={formData.upi}
+          onChange={(e) => setFormData({ ...formData, upi: e.target.value })}
+        />
+        <input
+          type="date"
+          placeholder="Date of Birth"
+          className="w-full border px-4 py-2 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 border-gray-300 dark:border-gray-600"
+          value={formData.dob}
+          onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
+          required
+        />
+        <input
+          type="number"
+          placeholder="Monthly Salary"
+          className="w-full border px-4 py-2 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 border-gray-300 dark:border-gray-600"
+          value={formData.salary}
+          onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
+          required
+        />
+        <button
+          type="submit"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded"
+        >
+          {isEditing ? 'Update Lecturer' : 'Add Lecturer'}
+        </button>
+      </form>
+    </div>
+  </div>
+)}
 
 
       {deleteModalOpen && (

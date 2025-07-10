@@ -112,8 +112,8 @@ const handleLogout = async () => {
 
       <div className="flex-1 flex flex-col">
         {/* Logo Section */}
-        <div className="flex items-center gap-3 p-6 border-b border-gray-200 dark:border-gray-700">
-          <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xl font-bold shadow-lg">
+        <div className="flex items-center gap-3 p-2 border-b border-gray-200 dark:border-gray-700">
+          <div className="h-11 w-12 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xl font-bold shadow-lg">
             SA
           </div>
           <div>
