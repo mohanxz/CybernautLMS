@@ -163,6 +163,7 @@ export default function StudentList() {
             <table className="min-w-full bg-white dark:bg-gray-900">
               <thead>
                 <tr className="bg-blue-100 dark:bg-gray-800 text-blue-900 dark:text-gray-200 text-left text-sm">
+                  <th className="py-3 px-4">Roll No</th>
                   <th className="py-3 px-4">Name</th>
                   <th className="py-3 px-4">Email</th>
                   <th className="py-3 px-4">Phone</th>
@@ -176,6 +177,7 @@ export default function StudentList() {
                     key={student._id}
                     className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 text-sm"
                   >
+                    <td className="py-3 px-4">{student.rollNo}</td>
                     <td className="py-2 px-4">{student.name}</td>
                     <td className="py-2 px-4">{student.email}</td>
                     <td className="py-2 px-4">{student.phone}</td>

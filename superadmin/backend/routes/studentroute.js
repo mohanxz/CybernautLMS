@@ -29,58 +29,73 @@ router.post("/save-selected", async (req, res) => {
   const credentials = [];
 
   try {
+    // Group new students by batch
+    const batchStudentMap = {};
     for (const stu of selectedStudents) {
-      const email = sanitizeCell(stu.email);
-const name = sanitizeCell(stu.name);
-const phone = sanitizeCell(stu.phone);
-const address = sanitizeCell(stu.address);
-const dob = stu.dob && typeof stu.dob === 'number'
-  ? new Date(new Date(Date.UTC(1899, 11, 30)).getTime() + stu.dob * 86400000)
-  : new Date(stu.dob);
+      const batchId = stu.batch;
+      if (!batchStudentMap[batchId]) batchStudentMap[batchId] = [];
+      batchStudentMap[batchId].push(stu);
+    }
 
-const existingUser = await User.findOne({ email });
-if (existingUser) continue;
+    for (const [batchId, students] of Object.entries(batchStudentMap)) {
+      // Get current max rollNo in this batch
+      const existingRolls = await Student.find({ batch: batchId })
+        .sort({ rollNo: -1 })
+        .limit(1);
 
-      if (existingUser) continue;
+      let currentRoll = existingRolls.length > 0 ? existingRolls[0].rollNo + 1 : 1;
 
-      const plainPassword = Math.random().toString(36).slice(-8);
-const hashedPassword = await bcrypt.hash(plainPassword, 10);
+      // Sort incoming students by name
+      students.sort((a, b) => sanitizeCell(a.name).localeCompare(sanitizeCell(b.name)));
 
-const newUser = await User.create({
-  name,
-  email,
-  password: hashedPassword,
-  role: "student",
-});
+      for (const stu of students) {
+        const email = sanitizeCell(stu.email);
+        const name = sanitizeCell(stu.name);
+        const phone = sanitizeCell(stu.phone);
+        const address = sanitizeCell(stu.address);
+        const dob = stu.dob && typeof stu.dob === 'number'
+          ? new Date(new Date(Date.UTC(1899, 11, 30)).getTime() + stu.dob * 86400000)
+          : new Date(stu.dob);
 
-await Student.create({
-  user: newUser._id,
-  course: stu.course,
-  batch: stu.batch,
-  phone,
-  address,
-  dob,
-});
+        const existingUser = await User.findOne({ email });
+        if (existingUser) continue;
 
-credentials.push({ name, email, password: plainPassword });
+        const plainPassword = Math.random().toString(36).slice(-8);
+        const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
+        const newUser = await User.create({
+          name,
+          email,
+          password: hashedPassword,
+          role: "student",
+        });
 
-      // Send Email
-      await transporter.sendMail({
-  from: `"Cybernaut Admin" <${process.env.EMAIL_USER}>`,
-  to: email,
-  subject: "Welcome to Cybernaut LMS - Your Account Credentials",
-  html: `
-    <h3>Hello ${name},</h3>
-    <p>Your account has been created on <strong>Cybernaut LMS</strong>.</p>
-    <p><strong>Username:</strong> ${email}</p>
-    <p><strong>Password:</strong> ${plainPassword}</p>
-    <p>You can log in at <a href="http://your-lms-domain.com/login">Cybernaut LMS</a></p>
-    <br/>
-    <p>Regards,<br/>Cybernaut Team</p>
-  `,
-});
+        await Student.create({
+          user: newUser._id,
+          batch: stu.batch,
+          phone,
+          address,
+          dob,
+          rollNo: currentRoll++,
+        });
 
+        credentials.push({ name, email, password: plainPassword });
+
+        await transporter.sendMail({
+          from: `"Cybernaut Admin" <${process.env.EMAIL_USER}>`,
+          to: email,
+          subject: "Welcome to Cybernaut LMS - Your Account Credentials",
+          html: `
+            <h3>Hello ${name},</h3>
+            <p>Your account has been created on <strong>Cybernaut LMS</strong>.</p>
+            <p><strong>Username:</strong> ${email}</p>
+            <p><strong>Password:</strong> ${plainPassword}</p>
+            <p>You can log in at <a href="http://your-lms-domain.com/login">Cybernaut LMS</a></p>
+            <br/>
+            <p>Regards,<br/>Cybernaut Team</p>
+          `,
+        });
+      }
     }
 
     res.json({ credentials });
@@ -119,6 +134,17 @@ router.get('/', async (req, res) => {
         select: 'batchName course'
       });
 
+    // Sort by batch.batchName, then by rollNo
+    students.sort((a, b) => {
+      const batchA = a.batch?.batchName || '';
+      const batchB = b.batch?.batchName || '';
+
+      const batchCompare = batchA.localeCompare(batchB);
+      if (batchCompare !== 0) return batchCompare;
+
+      return a.rollNo - b.rollNo;
+    });
+
     const formattedStudents = students.map(student => ({
       _id: student._id,
       user: student.user,
@@ -126,6 +152,7 @@ router.get('/', async (req, res) => {
       dob: student.dob,
       batch: student.batch.batchName,
       course: student.batch.course.courseName,
+      rollNo: student.rollNo,
     }));
 
     res.json(formattedStudents);
@@ -134,6 +161,8 @@ router.get('/', async (req, res) => {
     res.status(500).json({ message: 'Server Error' });
   }
 });
+
+
 
 // Get students by batch
 router.get('/batch/:batch', async (req, res) => {

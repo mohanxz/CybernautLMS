@@ -16,11 +16,11 @@ router.get('/my-students', Verify, async (req, res) => {
     // 1. Get batches this admin is handling
     const batchDocs = await Batch.find({ "admins.admin": userId }).select('_id batchName');
 
-    // If course or year filters are applied, filter batches here
+    // Filter batches based on optional course/year
     const filteredBatchDocs = batchDocs.filter(batch => {
       const parts = batch.batchName.split('-'); // e.g., FS-JUL25-B1
       const coursePart = parts[0];
-      const yearPart = parts[1]?.slice(3); // from JUL25 -> 25
+      const yearPart = parts[1]?.slice(3); // e.g., from JUL25 -> 25
 
       const courseMatch = course ? course === coursePart : true;
       const yearMatch = year ? year === yearPart : true;
@@ -32,16 +32,14 @@ router.get('/my-students', Verify, async (req, res) => {
 
     // 2. Build query for students
     const query = { batch: { $in: batchIds } };
-
     if (batchId) {
       query.batch = batchId;
     }
 
-    // 3. Fetch students in these batches
+    // 3. Fetch students
     const students = await Student.find(query)
       .populate('user', 'name email')
-      .populate('batch', 'batchName')
-      .sort({ createdAt: -1 });
+      .populate('batch', 'batchName');
 
     // 4. Optional name filter
     let filteredStudents = students;
@@ -52,12 +50,22 @@ router.get('/my-students', Verify, async (req, res) => {
       );
     }
 
-    // 5. Return batch options
+    // ✅ 5. Sort by batchName, then rollNo
+    filteredStudents.sort((a, b) => {
+      const batchA = a.batch?.batchName || '';
+      const batchB = b.batch?.batchName || '';
+      const batchCompare = batchA.localeCompare(batchB);
+      if (batchCompare !== 0) return batchCompare;
+      return a.rollNo - b.rollNo;
+    });
+
+    // 6. Prepare batch options
     const batchOptions = filteredBatchDocs.map(b => ({
       _id: b._id,
       batchName: b.batchName
     }));
 
+    // 7. Send response
     res.json({
       students: filteredStudents.map(s => ({
         _id: s._id,
@@ -66,6 +74,7 @@ router.get('/my-students', Verify, async (req, res) => {
         batchName: s.batch?.batchName || "Unknown",
         phone: s.phone,
         dob: s.dob,
+        rollNo: s.rollNo,
         address: s.address
       })),
       batchOptions
@@ -76,5 +85,6 @@ router.get('/my-students', Verify, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
 
 module.exports = router;

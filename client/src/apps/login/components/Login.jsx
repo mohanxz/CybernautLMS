@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../api";
-import logo from "../assets/logo.JPG";
-import sideImage from "../assets/login-side.JPG";
+import logo from "../assets/Logo-main.png";
+import sideImage from "../assets/login-side3.webp";
 
 const Login = () => {
   const [email, setEmail] = useState("");

@@ -211,6 +211,7 @@ const filterStudents = () => {
               <th>Email</th>
               <th>Course</th>
               <th>Batch</th>
+              <th className="py-2">Roll No</th>
               <th>Phone</th>
               <th>DOB</th>
             </tr>
@@ -223,6 +224,7 @@ const filterStudents = () => {
         <td>{student.user?.email}</td>
         <td>{student.course}</td>
         <td>{student.batch}</td>
+        <td className="py-3 font-medium">{student.rollNo}</td>
         <td>{student.phone}</td>
         <td>{new Date(student.dob).toLocaleDateString()}</td>
       </tr>

@@ -6,9 +6,10 @@ const studentSchema = new mongoose.Schema({
   phone: { type: String, required: true },
   address: { type: String, required: true },
   dob: { type: Date, required: true },
-  certificate: { type: Boolean, default: false }
-}, { timestamps: true },
-);
+  certificate: { type: Boolean, default: false },
+  rollNo: { type: Number, required: true }
+}, { timestamps: true });
+
 
 module.exports = mongoose.model('Student', studentSchema);
 
