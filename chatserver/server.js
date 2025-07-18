@@ -43,71 +43,40 @@ const LOG_DIR = path.join(__dirname, 'chat_logs');
 
 if (!fs.existsSync(LOG_DIR)) fs.mkdirSync(LOG_DIR);
 
-function getLogPath(room) {
-  const parts = room.split('/');
-
-  // Rule 1: Admin ↔ SuperAdmin
-  if (parts.length === 2 && parts[0] === 'admins') {
-    const adminName = parts[1];
-    const dir = path.join(LOG_DIR, 'admins');
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    return path.join(dir, `${adminName}.txt`);
-  }
-
-  // Rule 2: Student ↔ Admin
-  // Format: course / batch / admins / adminName / students / studentName
-  if (
-    parts.length === 6 &&
-    parts[2] === 'admins' &&
-    parts[4] === 'students'
-  ) {
-    const [course, batch, , adminName, , studentName] = parts;
-    const dir = path.join(LOG_DIR, course, batch, 'admins', adminName, 'students');
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    return path.join(dir, `${studentName}.txt`);
-  }
-
-  // Rule 3: Forum Chat
-if (parts.length === 4 && parts[2] === 'forum' && parts[3] === 'general') {
-  const course = parts[0];
-  const batch = parts[1];
-  const dir = path.join(LOG_DIR, course, batch, 'forum');
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  return path.join(dir, 'general.txt');
-}
-
-
-  console.warn(`⚠️ Invalid room format: ${room}`);
-  return null;
-}
+const ChatMessage = require('./models/ChatMessage'); // Ensure path is correct
 
 
 
-function loadChat(room) {
-  const file = getLogPath(room);
-  if (!file) return [];
-  return fs.existsSync(file)
-    ? fs.readFileSync(file, 'utf8').split('\n').filter(Boolean)
-    : [];
-}
 
-function saveChat(room, message) {
-  const file = getLogPath(room);
-  if (!file) return;
-  fs.appendFileSync(file, message + '\n');
-}
 
 io.on('connection', socket => {
-  socket.on('joinRoom', ({ name, room }) => {
-    socket.join(room);
-    socket.emit('chatHistory', loadChat(room));
-  });
+  socket.on('joinRoom', async ({ name, room }) => {
+  socket.join(room);
+  try {
+    const messages = await ChatMessage.find({ chatroom: room }).sort({ timestamp: 1 });
+    const formatted = messages.map(m => `${m.name}: ${m.message}`);
+    socket.emit('chatHistory', formatted);
+  } catch (err) {
+    console.error('Error fetching chat history:', err);
+    socket.emit('chatHistory', []);
+  }
+});
 
-  socket.on('message', ({ name, room, message }) => {
-    const msg = `${name}: ${message}`;
-    saveChat(room, msg);
-    io.to(room).emit('message', msg);
-  });
+socket.on('message', async ({ name, room, message }) => {
+  try {
+    const chatMsg = new ChatMessage({
+      name,
+      chatroom: room,
+      message,
+      role: 'student' // You can dynamically assign based on session
+    });
+    await chatMsg.save();
+    io.to(room).emit('message', `${name}: ${message}`);
+  } catch (err) {
+    console.error('Error saving message:', err);
+  }
+});
+
 
   socket.on('leaveRoom', ({ room }) => {
     socket.leave(room);
@@ -218,6 +187,29 @@ app.get('/chatrooms', (req, res) => {
   });
 
   res.json(batches);
+});
+
+app.get("/students/:course/:batch/:admin", async (req, res) => {
+  try {
+    const { course, batch, admin } = req.params;
+    const encodedAdmin = encodeURIComponent(admin.trim());
+    const prefix = `${course}/${batch}/admins/${encodedAdmin}/students/`;
+
+    const messages = await ChatMessage.find({ chatroom: { $regex: `^${prefix}` } }).lean();
+
+    const students = [
+      ...new Set(
+        messages.map(msg =>
+          decodeURIComponent(msg.chatroom.replace(prefix, "").split("/")[0])
+        )
+      ),
+    ];
+
+    res.json(students);
+  } catch (err) {
+    console.error("Error fetching student list from MongoDB:", err);
+    res.status(500).send("Server error");
+  }
 });
 
 

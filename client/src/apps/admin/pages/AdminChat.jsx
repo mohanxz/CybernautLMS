@@ -21,7 +21,7 @@ export default function AdminChat() {
     chatType === "forum"
       ? `${course}/${batch}/forum/general`
       : chatType === "student" && selectedTarget
-      ? `${course}/${batch}/admins/${encodeURIComponent(sender.trim())}/students/${selectedTarget.trim()}`
+      ? `${course}/${batch}/admins/${encodeURIComponent(sender.trim())}/students/${encodeURIComponent(selectedTarget.trim())}`
       : null;
 
   useEffect(() => {
@@ -55,8 +55,10 @@ export default function AdminChat() {
     const fetchStudents = async () => {
       try {
         const res = await axios.get(
-          `http://localhost:5006/chatrooms/${course}/${batch}/admins/${encodeURIComponent(sender.trim())}/students`
-        );
+  `http://localhost:5006/students/${course}/${batch}/${encodeURIComponent(sender.trim())}`
+);
+
+
         setStudents(res.data);
       } catch (err) {
         console.error("Error loading students", err);
