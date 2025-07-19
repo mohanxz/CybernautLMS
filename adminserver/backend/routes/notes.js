@@ -3,7 +3,7 @@ const router = express.Router();
 const Note = require('../models/Note');
 const Student = require('../models/Student');
 const Report = require('../models/Report');
-
+const protect = require('../middleware/auth');
 // ✅ GET notes by batch and module
 router.get('/:batchId/:module', async (req, res) => {
   const { batchId, module } = req.params;
@@ -107,5 +107,24 @@ router.put('/:id', async (req, res) => {
     res.status(500).json({ error: 'Failed to update note', details: err.message });
   }
 });
+
+// Route to fetch all notes created by the logged-in admin
+router.get('/my-notes', protect , async (req, res) => {
+  try {
+    // Replace this with req.user._id if using auth middleware
+    const adminId = req.user.id;
+
+    if (!adminId) {
+      return res.status(400).json({ message: 'Admin ID is required' });
+    }
+
+    const notes = await Note.find({ admin: adminId }).sort({ day: 1 });
+    res.json(notes);
+  } catch (error) {
+    console.error('Error fetching admin notes:', error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
 
 module.exports = router;

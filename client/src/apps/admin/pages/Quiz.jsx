@@ -114,8 +114,8 @@ export default function AdminQuizzes() {
   };
 
   return (
-    <div className="p-6 mx-auto text-gray-900 h-screen dark:bg-black text-white">
-      <h2 className="text-2xl font-bold mb-6">
+    <div className="p-6 mx-auto text-gray-900 h-screen dark:bg-black dark:text-white">
+      <h2 className="text-2xl font-bold mb-6 text-black dark:text-white">
         Quiz Manager – <span className="text-indigo-600 dark:text-indigo-400">{selectedModule}</span>
       </h2>
 
@@ -138,7 +138,7 @@ export default function AdminQuizzes() {
       )}
 
       {notes.map(note => (
-        <div key={note._id} className="bg-white dark:bg-gray-800 shadow p-4 rounded-xl mb-6">
+        <div key={note._id} className="bg-white text-black dark:bg-gray-800 dark:text-white shadow p-4 rounded-xl mb-6">
           <div className="flex justify-between items-center mb-2">
             <h3 className="text-lg font-semibold">Day {note.day}: {note.title}</h3>
             <button

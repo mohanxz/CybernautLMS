@@ -13,7 +13,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import Sidebar from './components/Sidebar';
 import Settings from './pages/Settings';
 import Quiz from './pages/Quiz';
-
+import AdminCoding from './pages/AdminCoding';
 function AppRoutes() {
 
 
@@ -75,6 +75,18 @@ function AppRoutes() {
             </PrivateRoute>
           }
         />
+
+                <Route
+          path="/batch/:batchId/code"
+          element={
+            <PrivateRoute>
+              <Sidebar>
+                <AdminCoding />
+              </Sidebar>
+            </PrivateRoute>
+          }
+        />
+
         <Route
           path="/batch/:batchId/quiz"
           element={

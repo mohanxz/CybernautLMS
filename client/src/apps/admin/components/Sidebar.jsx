@@ -12,6 +12,7 @@ import {
   FaBook,
   FaClipboardCheck,
   FaFileAlt,
+  FaCode,
 } from "react-icons/fa";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -108,6 +109,7 @@ useEffect(() => {
     if (path.includes("/quiz")) return "Quiz";
     if (path.includes("/report")) return "Report";
     if (path.includes("/chat")) return "Batch Chat";
+    if (path.includes("/code")) return "Coding";
     return "Admin Dashboard";
   };
 
@@ -198,7 +200,7 @@ useEffect(() => {
 
         {showBatchSubmenu && selectedBatchId && (
           <div className="ml-8 mt-2 space-y-1">
-            {["lesson-plan", "report", "quiz", "chat"].map((item) => (
+            {["lesson-plan", "report", "quiz", "chat" , "code"].map((item) => (
               <NavLink
                 key={item}
                 to={`/admin/batch/${selectedBatchId}/${item}`}
@@ -214,6 +216,7 @@ useEffect(() => {
                 {item === "report" && <FaFileAlt className="text-sm" />}
                 {item === "quiz" && <FaClipboardCheck className="text-sm" />}
                 {item === "chat" && <FaComments className="text-sm" />}
+                {item === "code" && <FaCode className="text-sm" />}
                 <span className="text-sm font-medium capitalize">
                   {item.replace("-", " ")}
                 </span>
