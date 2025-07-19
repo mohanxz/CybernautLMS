@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const Student = require('../models/Student');
+const Batch = require('../models/Batch');
+const Course = require('../models/Course');
 const Report = require('../models/Report');
 const { generatePDF } = require('../utils/generatePDF');
 const { sendMail } = require('../utils/sendMail');
@@ -8,13 +10,12 @@ const { sendMail } = require('../utils/sendMail');
 router.get('/eligible', async (req, res) => {
   try {
     const students = await Student.find({ certificate: false }).populate('user');
-    console.log(students);
-    console.log("check");
+    
     let eligible = [];
 
     for (let student of students) {
       const reports = await Report.find({ student: student._id });
-    console.log(reports,"charan baadu");
+    
       const moduleMap = {};
 
       reports.forEach(r => {
@@ -44,7 +45,7 @@ router.get('/eligible', async (req, res) => {
       }
 
       if (pass) eligible.push(student);
-      console.log(student,"charan baadu 2");
+      
     }
 
     res.json(eligible);
@@ -60,15 +61,29 @@ router.post('/generate', async (req, res) => {
     const { students } = req.body; // array of student ids
 
     for (let id of students) {
-      const student = await Student.findById(id).populate('user');
+      const student = await Student.findById(id)
+        .populate('user')
+        .populate({
+          path: 'batch',
+          populate: {
+            path: 'course',
+            model: 'Course'
+          }
+        });
+
+      if (!student || !student.user || !student.batch || !student.batch.course) {
+        console.warn(`Skipping student ID ${id} due to missing data`);
+        continue;
+      }
 
       const name = student.user.name;
       const email = student.user.email;
+      const courseName = student.batch.course.courseName;
+      const batchName = student.batch.batchName;
+      const rollNo = student.rollNo;
 
-      const filePath = await generatePDF(name);
-      await sendMail(name, email, filePath);
+      await generatePDF(name, courseName, batchName, rollNo,email);
 
-      // Update certificate status
       student.certificate = true;
       await student.save();
     }
