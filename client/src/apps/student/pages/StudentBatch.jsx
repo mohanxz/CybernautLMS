@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import api from "../api";
-import { FaVideo, FaQuestionCircle, FaFileAlt, FaUpload , FaCheckCircle } from 'react-icons/fa';
+import { FaVideo, FaQuestionCircle, FaFileAlt, FaUpload, FaCheckCircle } from 'react-icons/fa';
+import { toast } from 'react-toastify';
 
 export default function StudentBatch() {
   const { batchId } = useParams();
@@ -14,8 +15,6 @@ export default function StudentBatch() {
   const [quizzesMap, setQuizzesMap] = useState({});
   const navigate = useNavigate();
 
-
-  
   useEffect(() => {
     const fetchStudent = async () => {
       try {
@@ -64,23 +63,21 @@ export default function StudentBatch() {
         }
 
         const quizMap = {};
-for (const module in allNotes) {
-  for (const note of [...allNotes[module].today, ...allNotes[module].others]) {
-    try {
-      const res = await api.get(`/api/quiz/by-note/${note._id}`);
-      if (res.data?._id) {
-        quizMap[note._id] = res.data;
-      }
-    } catch {
-      console.error("No quiz uploaded for this note");
-    }
-  }
-}
-setQuizzesMap(quizMap);
+        for (const module in allNotes) {
+          for (const note of [...allNotes[module].today, ...allNotes[module].others]) {
+            try {
+              const res = await api.get(`/api/quiz/by-note/${note._id}`);
+              if (res.data?._id) {
+                quizMap[note._id] = res.data;
+              }
+            } catch {
+              console.warn("No quiz uploaded for this note");
+            }
+          }
+        }
 
         setNotesMap(allNotes);
-
-
+        setQuizzesMap(quizMap);
         if (latestModule) setActiveModule(latestModule);
       } catch (err) {
         console.error('Error loading batch or notes:', err);
@@ -124,11 +121,11 @@ setQuizzesMap(quizMap);
         if (res.data?.url) {
           window.open(res.data.url, '_blank');
         } else {
-          alert("Assignment link not found");
+          toast.info("Assignment link not found");
         }
       } catch (err) {
         console.error("Error fetching assignment link:", err);
-        alert("Failed to fetch assignment link");
+        toast.error("Failed to fetch assignment link");
       }
     };
 
@@ -147,28 +144,21 @@ setQuizzesMap(quizMap);
           </button>
 
           {!quizzesMap[note._id] ? (
-  <button
-    disabled
-    className="flex items-center gap-2 text-sm px-4 py-2 rounded bg-gray-300 text-gray-700 cursor-not-allowed"
-  >
-    <FaQuestionCircle /> No Quiz Available
-  </button>
-) : quizMark >= 0 ? (
-  <button
-    disabled
-    className="flex items-center gap-2 text-sm px-4 py-2 rounded bg-green-500 text-white cursor-not-allowed"
-  >
-    <FaCheckCircle /> Submitted
-  </button>
-) : (
-  <button
-    onClick={() => navigate(`/student/quiz/attempt/${note._id}`)}
-    className="flex items-center gap-2 text-sm px-4 py-2 rounded bg-black text-white hover:bg-gray-800"
-  >
-    <FaQuestionCircle /> Attempt Quiz
-  </button>
-)}
-
+            <button disabled className="flex items-center gap-2 text-sm px-4 py-2 rounded bg-gray-300 text-gray-700 cursor-not-allowed">
+              <FaQuestionCircle /> No Quiz Available
+            </button>
+          ) : quizMark >= 0 ? (
+            <button disabled className="flex items-center gap-2 text-sm px-4 py-2 rounded bg-green-500 text-white cursor-not-allowed">
+              <FaCheckCircle /> Submitted
+            </button>
+          ) : (
+            <button
+              onClick={() => navigate(`/student/quiz/attempt/${note._id}`)}
+              className="flex items-center gap-2 text-sm px-4 py-2 rounded bg-black text-white hover:bg-gray-800"
+            >
+              <FaQuestionCircle /> Attempt Quiz
+            </button>
+          )}
 
           <button
             onClick={viewAssignment}
@@ -189,14 +179,25 @@ setQuizzesMap(quizMap);
               />
               <button
                 title="Upload Answer"
-                onClick={() => {
-                  if (!note.file) return alert('Choose a PDF');
+                onClick={async () => {
+                  if (!note.file) {
+                    toast.warn('Please choose a PDF');
+                    return;
+                  }
+
                   const fd = new FormData();
                   fd.append('file', note.file);
-                  axios.post(
-                    `http://localhost:5002/notes/upload/${encodeURIComponent(batch.batchName)}/${module}/${encodeURIComponent(note.title)}/${encodeURIComponent(student.user.name)}/${student._id}/${student.rollNo}/${note.day}`,
-                    fd
-                  ).then(() => alert('Answer uploaded')).catch(console.error);
+
+                  try {
+                    await axios.post(
+                      `http://localhost:5002/notes/upload/${encodeURIComponent(batch.batchName)}/${module}/${encodeURIComponent(note.title)}/${encodeURIComponent(student.user.name)}/${student._id}/${student.rollNo}/${note.day}`,
+                      fd
+                    );
+                    toast.success('Answer uploaded successfully');
+                  } catch (err) {
+                    console.error(err);
+                    toast.error('Upload failed');
+                  }
                 }}
                 className="bg-black text-white p-3 rounded-full hover:bg-gray-800"
               >
@@ -227,7 +228,6 @@ setQuizzesMap(quizMap);
         </h2>
       </div>
 
-      {/* Module Tabs */}
       <div className="flex flex-wrap gap-2 mb-6">
         {Object.keys(notesMap).map(module => (
           <button
@@ -244,7 +244,6 @@ setQuizzesMap(quizMap);
         ))}
       </div>
 
-      {/* Notes Section */}
       <div className="mb-10">
         {currentModuleNotes.today.length > 0 && (
           <div className="mb-10">

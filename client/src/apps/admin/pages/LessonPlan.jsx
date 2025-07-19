@@ -19,6 +19,9 @@ export default function LessonPlan() {
   const [showEvalModal, setShowEvalModal] = useState(false);
   const [evalData, setEvalData] = useState(null);
   const [batchDetails, setBatchDetails] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+  const [submittingStudentId, setSubmittingStudentId] = useState(null);
+
 
   const backendBase = 'http://localhost:5002';
   const token = localStorage.getItem('token');
@@ -87,79 +90,87 @@ export default function LessonPlan() {
   };
 
   const handleSubmit = async () => {
-    if (!form.title || !form.day) return alert('Please fill title and day');
-    try {
-      let assignmentS3Url = '';
+  if (!form.title || !form.day) return alert('Please fill title and day');
+  setSubmitting(true);
+  try {
+    let assignmentS3Url = '';
 
-      if (pdfFile) {
-        const fd = new FormData();
-        fd.append('file', pdfFile);
+    if (pdfFile) {
+      const fd = new FormData();
+      fd.append('file', pdfFile);
 
-        const uploadRes = await axios.post(
-          `${backendBase}/upload-assignment?batch=${batchId}&module=${selectedModule}&title=${form.title}`,
-          fd,
-          {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+      const uploadRes = await axios.post(
+        `${backendBase}/upload-assignment?batch=${batchId}&module=${selectedModule}&title=${form.title}`,
+        fd,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-        assignmentS3Url = uploadRes.data.s3path;
-      }
-
-      const payload = {
-        ...form,
-        batch: batchId,
-        module: selectedModule,
-        admin: adminId,
-        assignmentS3Url,
-      };
-
-      if (editingNoteId) {
-        await axios.put(`${backendBase}/notes/${editingNoteId}`, payload, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-      } else {
-        await axios.post(`${backendBase}/notes`, payload, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-      }
-      toast.success("Note added Successfully");
-      setShowModal(false);
-      fetchNotes();
-    } catch (e) {
-      console.error(e);
-      if (e.response?.data?.error?.includes("already exists")) {
-        toast.error(`Day ${form.day} already exists for this batch`, {
-          position: "top-right",
-        });
-      } else {
-        toast.error(e.response?.data?.error || 'Error saving note');
-      }
+      assignmentS3Url = uploadRes.data.s3path;
     }
-  };
+
+    const payload = {
+      ...form,
+      batch: batchId,
+      module: selectedModule,
+      admin: adminId,
+      assignmentS3Url,
+    };
+
+    if (editingNoteId) {
+      await axios.put(`${backendBase}/notes/${editingNoteId}`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } else {
+      await axios.post(`${backendBase}/notes`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    }
+
+    toast.success("Note saved successfully");
+    setShowModal(false);
+    fetchNotes();
+  } catch (e) {
+    console.error(e);
+    toast.error(
+      e.response?.data?.error?.includes("already exists")
+        ? `Day ${form.day} already exists for this batch`
+        : e.response?.data?.error || 'Error saving note'
+    );
+  } finally {
+    setSubmitting(false);
+  }
+};
+
 
   const handleEvaluate = async (studentId, marks, setMarks) => {
-    const mark = parseInt(marks[studentId]);
-    if (isNaN(mark) || mark < 0 || mark > 10) {
-      toast.error("Please enter a valid mark between 0 and 10");
-      return;
-    }
-    try {
-      await axios.post(`${backendBase}/evaluate`, {
-        studentId,
-        module: selectedModule,
-        day: evalData.day,
-        mark
-      });
-      const res = await axios.get(`${backendBase}/evaluate/${batchId}/${selectedModule}/${evalData.title}/${evalData.day}`);
-      setEvalData(prev => ({ ...prev, submissions: res.data }));
-    } catch (err) {
-      console.error("Error submitting marks", err);
-    }
-  };
+  const mark = parseInt(marks[studentId]);
+  if (isNaN(mark) || mark < 0 || mark > 10) {
+    toast.error("Please enter a valid mark between 0 and 10");
+    return;
+  }
+
+  setSubmittingStudentId(studentId);
+  try {
+    await axios.post(`${backendBase}/evaluate`, {
+      studentId,
+      module: selectedModule,
+      day: evalData.day,
+      mark
+    });
+    const res = await axios.get(`${backendBase}/evaluate/${batchId}/${selectedModule}/${evalData.title}/${evalData.day}`);
+    setEvalData(prev => ({ ...prev, submissions: res.data }));
+  } catch (err) {
+    console.error("Error submitting marks", err);
+    toast.error("Failed to evaluate submission");
+  } finally {
+    setSubmittingStudentId(null);
+  }
+};
 
   return (
     <div className=" mx-auto p-6 text-gray-900 dark:text-white bg-white dark:bg-black w-full min-h-screen">
@@ -318,9 +329,18 @@ export default function LessonPlan() {
               <input className="w-full border p-3 rounded-lg" placeholder="External Assignment Link" value={form.assignmentlink} onChange={e => setForm({ ...form, assignmentlink: e.target.value })} />
               <input type="number" className="w-full border p-3 rounded-lg" placeholder="Day" value={form.day} onChange={e => setForm({ ...form, day: e.target.value })} />
               <input type="file" accept="application/pdf" className="w-full border p-2 rounded-lg bg-gray-100" onChange={e => setPdfFile(e.target.files[0])} />
-              <button onClick={handleSubmit} className="w-full bg-black text-white py-3 rounded-lg hover:bg-gray-800">
-                {editingNoteId ? 'Update Note' : 'Add Note'}
-              </button>
+              <button
+  onClick={handleSubmit}
+  className={`w-full text-white py-3 rounded-lg transition ${
+    submitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-black hover:bg-gray-800'
+  }`}
+  disabled={submitting}
+>
+  {submitting
+    ? (editingNoteId ? 'Updating...' : 'Adding...')
+    : (editingNoteId ? 'Update Note' : 'Add Note')}
+</button>
+
             </div>
           </div>
         </div>
@@ -363,11 +383,15 @@ function EvaluationTable({ submissions, handleEvaluate }) {
             </td>
             <td className="p-3 border text-center">
               <button
-                className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
-                onClick={() => handleEvaluate(sub.studentId, marks, setMarks)}
-              >
-                Evaluate
-              </button>
+  className={`px-3 py-1 rounded text-white ${
+    submittingStudentId === sub.studentId ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'
+  }`}
+  disabled={submittingStudentId === sub.studentId}
+  onClick={() => handleEvaluate(sub.studentId, marks, setMarks)}
+>
+  {submittingStudentId === sub.studentId ? 'Saving...' : 'Evaluate'}
+</button>
+
             </td>
           </tr>
         ))}
