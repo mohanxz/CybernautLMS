@@ -32,88 +32,89 @@ export default function StudentBatch() {
     fetchStudent();
   }, [navigate]);
 
-  useEffect(() => {
-    const fetchBatchAndNotes = async () => {
-      try {
-        const res = await api.get(`/student/batch/by-id/${batchId}`);
-        setBatch(res.data);
-
-        const token = localStorage.getItem('token');
-        const allNotes = {};
-        let latestModule = null;
-        let maxOverallDay = -1;
-
-        for (const adminObj of res.data.admins) {
-          const moduleName = adminObj.module;
-          const noteRes = await api.get(`/notes/${batchId}/${moduleName}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-
-          const notes = Array.isArray(noteRes.data) ? noteRes.data : noteRes.data.notes || [];
-          const maxDay = Math.max(...notes.map(note => note.day || 0));
-
-          if (maxDay > maxOverallDay) {
-            maxOverallDay = maxDay;
-            latestModule = moduleName;
-          }
-
-          allNotes[moduleName] = {
-            today: notes.filter(note => note.day === maxDay),
-            others: notes.filter(note => note.day !== maxDay)
-          };
-        }
-
-        const quizMap = {};
-        for (const module in allNotes) {
-          for (const note of [...allNotes[module].today, ...allNotes[module].others]) {
-            try {
-              const res = await api.get(`/api/quiz/by-note/${note._id}`);
-              if (res.data?._id) {
-                quizMap[note._id] = res.data;
-              }
-            } catch {
-              console.warn("No quiz uploaded for this note");
-            }
-          }
-        }
-
-        const codingMap = {};
-for (const module in allNotes) {
-  for (const note of [...allNotes[module].today, ...allNotes[module].others]) {
+useEffect(() => {
+  const fetchBatchAndNotes = async () => {
     try {
-      const res = await api.get(`/api/coding-question/by-note/${note._id}`);
-      if (res.data?._id) {
-        const codingQuestion = res.data;
+      if (!student) return; // ⛳ wait for student before proceeding
 
-        // Check if student has already submitted code
-        const token = localStorage.getItem("token");
-        const statusRes = await axios.get(
-          `http://localhost:5003/api/coding/submission-status/${note._id}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+      const res = await api.get(`/student/batch/by-id/${batchId}`);
+      setBatch(res.data);
 
-        codingMap[note._id] = {
-          ...codingQuestion,
-          submitted: statusRes.data.submitted,
+      const token = localStorage.getItem('token');
+      const allNotes = {};
+      let latestModule = null;
+      let maxOverallDay = -1;
+
+      for (const adminObj of res.data.admins) {
+        const moduleName = adminObj.module;
+        const noteRes = await api.get(`/notes/${batchId}/${moduleName}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const notes = Array.isArray(noteRes.data) ? noteRes.data : noteRes.data.notes || [];
+        const maxDay = Math.max(...notes.map(note => note.day || 0));
+
+        if (maxDay > maxOverallDay) {
+          maxOverallDay = maxDay;
+          latestModule = moduleName;
+        }
+
+        allNotes[moduleName] = {
+          today: notes.filter(note => note.day === maxDay),
+          others: notes.filter(note => note.day !== maxDay)
         };
       }
-    } catch {
-      console.warn("No coding question or submission status for this note");
-    }
-  }
-}
-setCodingQuestionsMap(codingMap);
 
-        setNotesMap(allNotes);
-        setQuizzesMap(quizMap);
-        if (latestModule) setActiveModule(latestModule);
-      } catch (err) {
-        console.error('Error loading batch or notes:', err);
+      const quizMap = {};
+      for (const module in allNotes) {
+        for (const note of [...allNotes[module].today, ...allNotes[module].others]) {
+          try {
+            const res = await api.get(`/api/quiz/by-note/${note._id}`);
+            if (res.data?._id) {
+              quizMap[note._id] = res.data;
+            }
+          } catch {
+            console.warn("No quiz uploaded for this note");
+          }
+        }
       }
-    };
 
-    if (batchId) fetchBatchAndNotes();
-  }, [batchId]);
+      const codingMap = {};
+      for (const module in allNotes) {
+        for (const note of [...allNotes[module].today, ...allNotes[module].others]) {
+          try {
+            const res = await api.get(`/api/coding-question/by-note/${note._id}`);
+            if (res.data?._id) {
+              const codingQuestion = res.data;
+
+              // Fetch submission status only when student is available
+              const statusRes = await axios.get(
+                `http://localhost:5003/api/coding/submission-status/${note._id}/${student._id}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+              );
+
+              codingMap[note._id] = {
+                ...codingQuestion,
+                submitted: statusRes.data.submitted,
+              };
+            }
+          } catch {
+            console.warn("No coding question or submission status for this note");
+          }
+        }
+      }
+
+      setCodingQuestionsMap(codingMap);
+      setNotesMap(allNotes);
+      setQuizzesMap(quizMap);
+      if (latestModule) setActiveModule(latestModule);
+    } catch (err) {
+      console.error('Error loading batch or notes:', err);
+    }
+  };
+
+  if (batchId && student) fetchBatchAndNotes();
+}, [batchId, student]);
 
   useEffect(() => {
     const fetchReports = async () => {
@@ -198,7 +199,7 @@ setCodingQuestionsMap(codingMap);
     </button>
   ) : (
     <button
-      onClick={() => navigate(`/student/code/attempt/${note._id}`)}
+      onClick={() => navigate(`/student/code/attempt/${note._id}/${student._id}`)}
       className="flex items-center gap-2 text-sm px-4 py-2 rounded bg-black text-white hover:bg-gray-800"
     >
       <FaCode /> Attempt Coding

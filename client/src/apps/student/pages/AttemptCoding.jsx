@@ -27,7 +27,7 @@ const languages = [
 ];
 
 const AttemptCodingQuestion = () => {
-  const { noteId } = useParams();
+  const { noteId,studentId } = useParams();
   const navigate = useNavigate();
 
   const [question, setQuestion] = useState(null);
@@ -64,7 +64,7 @@ const AttemptCodingQuestion = () => {
       const token = localStorage.getItem("token");
 
       await axios.post(
-        `http://localhost:5003/api/coding/submit/${noteId}`,
+        `http://localhost:5003/api/coding/submit/${noteId}/${studentId}`,
         { code, language },
         { headers: { Authorization: `Bearer ${token}` } }
       );

@@ -110,7 +110,6 @@ useEffect(() => {
     if (path.includes("/report")) return "Report";
     if (path.includes("/chat")) return "Batch Chat";
     if (path.includes("/code")) return "Coding";
-    if (path.includes("/code-eval")) return "Code Evaluation";
     return "Admin Dashboard";
   };
 
@@ -218,7 +217,7 @@ useEffect(() => {
                 {item === "quiz" && <FaClipboardCheck className="text-sm" />}
                 {item === "chat" && <FaComments className="text-sm" />}
                 {item === "code" && <FaCode className="text-sm" />}
-                {item === "code-eval" && <FaCode className="text-sm" />}
+                
                 <span className="text-sm font-medium capitalize">
                   {item.replace("-", " ")}
                 </span>

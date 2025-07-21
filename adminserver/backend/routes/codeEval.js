@@ -4,6 +4,7 @@ const auth = require("../middleware/auth");
 const CodingQuestion = require("../models/Code");
 const CodeSubmission = require("../models/CodeSubmission");
 const Student = require("../models/Student");
+const Note = require("../models/Note");
 const Report = require("../models/Report"); // your Report model
 const router = express.Router();
 
@@ -11,12 +12,12 @@ const router = express.Router();
 const JUDGE0_URL = "http://13.50.13.88:2358";
 
 router.post("/run", async (req, res) => {
-  const { source_code, language_id } = req.body;
+  const { source_code, language_id, stdin } = req.body;
 
   try {
     const response = await axios.post(
       `${JUDGE0_URL}/submissions?base64_encoded=false&wait=true`,
-      { source_code, language_id },
+      { source_code, language_id, stdin },
       { headers: { "Content-Type": "application/json" } }
     );
 
@@ -27,79 +28,116 @@ router.post("/run", async (req, res) => {
   }
 });
 
-router.get("/:noteId/:batchId", auth, async (req, res) => {
-  const { noteId, batchId } = req.params;
+// GET /api/codeEval/:noteId/:studentId
+router.get("/:noteId/:studentId", async (req, res) => {
+  const { noteId, studentId } = req.params;
 
   try {
-    // Validate question exists
-    const question = await CodingQuestion.findOne({ noteId });
-
-    if (!question) {
-      return res.status(404).json({ message: "Coding question not found" });
+    const submission = await CodeSubmission.findOne({ noteId, studentId });
+    console.log("Fetched submission:", submission);
+    if (!submission) {
+      return res.status(404).json({ message: "Submission not found" });
     }
 
-    // Find submissions for the noteId and batch's students
+    res.json({
+      code: submission.code,
+      language: submission.language,
+    });
+  } catch (err) {
+    console.error("Error fetching submission:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+router.get("/:noteId", async (req, res) => {
+  try {
+    const { noteId } = req.params;
+
+    // First get the note to extract its 'day'
+    const note = await Note.findById(noteId);
+    if (!note) return res.status(404).json({ message: "Note not found" });
+    const day = note.day;
+
     const submissions = await CodeSubmission.find({ noteId })
       .populate({
         path: "studentId",
-        match: { batch: batchId },
+        select: "rollNo user",
         populate: {
           path: "user",
-          select: "name email"
+          select: "name"
         }
+      })
+      .sort({ submittedAt: -1 });
+
+    const validSubmissions = submissions.filter(
+      (sub) => sub.studentId && sub.studentId.user
+    );
+
+    const results = [];
+
+    for (const sub of validSubmissions) {
+      const existingReport = await Report.findOne({
+        student: sub.studentId._id,
+        day: day
       });
 
-    const filtered = submissions.filter(s => s.studentId !== null);
+      // Skip if coding mark is already set
+      if (existingReport && existingReport.marksObtained[0] > -1) {
+        continue;
+      }
 
-    const response = filtered.map(sub => ({
-      studentName: sub.studentId.user.name,
-      email: sub.studentId.user.email,
-      language: sub.language,
-      code: sub.code,
-      submittedAt: sub.submittedAt,
-    }));
+      results.push({
+        studentId: sub.studentId._id,
+        rollNo: sub.studentId.rollNo,
+        name: sub.studentId.user.name,
+        code: sub.code,
+        language: sub.language,
+        submittedAt: sub.submittedAt
+      });
+    }
 
-    res.json(response);
-
-  } catch (err) {
-    console.error("Error fetching submissions:", err);
-    res.status(500).json({ error: "Server error" });
+    res.json(results);
+  } catch (error) {
+    console.error("Error fetching code submissions:", error);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
-router.post("/evaluate-code", async (req, res) => {
-  const { studentId, module, day, mark } = req.body;
-
-  if (!studentId || !module || day === undefined || mark === undefined) {
-    return res.status(400).json({ message: "Missing required fields" });
-  }
+router.post('/save', async (req, res) => {
+  const { studentId, noteId, module, codingMark } = req.body;
 
   try {
-    // Check if report already exists
-    let report = await Report.findOne({ student: studentId, module, day });
+    // Get the day from the note
+    const note = await Note.findById(noteId);
+    if (!note) return res.status(404).json({ error: 'Note not found' });
+
+    const day = note.day;
+
+    let report = await Report.findOne({ student: studentId, day });
 
     if (report) {
-      // Update coding mark (index 0)
-      report.marksObtained[0] = mark;
-      await report.save();
-      return res.json({ message: "Marks updated in existing report" });
+      report.marksObtained[0] = codingMark; // [coding, quiz, assignment]
     } else {
-      // Create new report with [mark, -1, -1]
-      const newReport = new Report({
+      report = new Report({
         student: studentId,
         module,
         day,
-        marksObtained: [mark, -1, -1],
+        marksObtained: [codingMark, -1, -1]
       });
-
-      await newReport.save();
-      return res.json({ message: "New report created with coding mark" });
     }
 
+    await report.save();
+    res.json({ success: true, report });
+
   } catch (err) {
-    console.error("Error saving marks:", err);
-    res.status(500).json({ message: "Server error while saving marks" });
+    console.error(err);
+    res.status(500).json({ error: 'Failed to save code evaluation' });
   }
 });
+
+
+
+
 
 module.exports = router;

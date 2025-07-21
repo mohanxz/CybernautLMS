@@ -16,8 +16,8 @@ router.get("/:noteId", auth, async (req, res) => {
 });
 
 // POST code submission
-router.post("/submit/:noteId", auth, async (req, res) => {
-  const { noteId } = req.params;
+router.post("/submit/:noteId/:studentId", auth, async (req, res) => {
+  const { noteId,studentId } = req.params;
   const { code, language } = req.body;
 
   if (!code || !language) {
@@ -25,9 +25,10 @@ router.post("/submit/:noteId", auth, async (req, res) => {
   }
 
   try {
+
     await CodeSubmission.create({
       noteId,
-      studentId: req.user.id,
+      studentId,  // Use the student schema's _id
       code,
       language,
     });
@@ -39,11 +40,11 @@ router.post("/submit/:noteId", auth, async (req, res) => {
   }
 });
 
+
 // Check if code has been submitted
-router.get("/submission-status/:noteId", auth, async (req, res) => {
+router.get("/submission-status/:noteId/:studentId", auth, async (req, res) => {
   try {
-    const { noteId } = req.params;
-    const studentId = req.user.id;
+    const { noteId,studentId } = req.params;
 
     const existing = await CodeSubmission.findOne({ noteId, studentId });
     res.json({ submitted: !!existing });

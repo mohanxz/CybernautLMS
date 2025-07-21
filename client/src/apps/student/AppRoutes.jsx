@@ -79,7 +79,7 @@ function AppRoutes() {
         />
 
         <Route
-          path="/code/attempt/:noteId"
+          path="/code/attempt/:noteId/:studentId"
           element={
             <PrivateRoute>
               <AttemptCoding />

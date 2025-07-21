@@ -19,12 +19,13 @@ export default function LessonPlan() {
   const [editingNoteId, setEditingNoteId] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showEvalModal, setShowEvalModal] = useState(false);
+  const [showCodeEvalModal, setShowCodeEvalModal] = useState(false);
+  const [codeEvalData, setCodeEvalData] = useState(null);
   const [evalData, setEvalData] = useState(null);
   const [batchDetails, setBatchDetails] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [submittingStudentId, setSubmittingStudentId] = useState(null);
-  const [showCodeEvalModal, setShowCodeEvalModal] = useState(false);
-const [codeEvalData, setCodeEvalData] = useState(null);
+  
 
 
 
@@ -93,22 +94,22 @@ const [codeEvalData, setCodeEvalData] = useState(null);
       console.error("Failed to load submissions", err);
     }
   };
-
-  const openCodeEvalModal = async (note) => {
-  setCodeEvalData({ title: note.title, day: note.day, submissions: [] });
-  setShowCodeEvalModal(true);
-
+  
+  const openCodeEvalModal = async (noteId) => {
   try {
-    const res = await axios.get(
-      `http://localhost:5002/api/codeEval/${note._id}`, // ID of CodingQuestion
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    setCodeEvalData({ title: note.title, day: note.day, submissions: res.data });
+    const res = await axios.get(`http://localhost:5002/api/codeEval/${noteId}`);
+    setCodeEvalData({
+      noteId: noteId,
+      submissions: res.data, // studentId -> user.name, rollNo, code
+    });
+    setShowCodeEvalModal(true);
   } catch (err) {
     console.error("Failed to load code submissions", err);
-    toast.error("Unable to load code evaluations");
+    toast.error("Unable to fetch code submissions.");
   }
 };
+
+  
 
 
 
@@ -196,6 +197,9 @@ const [codeEvalData, setCodeEvalData] = useState(null);
   }
 };
 
+
+
+
   return (
     <div className=" mx-auto p-6 text-gray-900 dark:text-white bg-white dark:bg-black w-full min-h-screen">
       {/* Module switch buttons */}
@@ -263,18 +267,17 @@ const [codeEvalData, setCodeEvalData] = useState(null);
       >
         <FaFlask className="text-sm" /> Evaluate Assignment
       </button>
+
+      <button onClick={() => openCodeEvalModal(notes[0]._id)}>
+  Evaluate Code
+</button>
       <button
         onClick={() => openModalForEdit(notes[0])}
         className="flex items-center justify-center gap-2 w-32 px-3 py-2 bg-black text-white rounded hover:bg-gray-800 text-sm"
       >
         <FaEdit className="text-sm" /> Edit
       </button>
-      <button
-  onClick={e => { e.stopPropagation(); openCodeEvalModal(notes[0]); }}
-  className="flex items-center justify-center gap-2 w-32 px-3 py-2 bg-black text-white rounded hover:bg-gray-800 text-sm"
->
-  Evaluate Code
-</button>
+      
     </div>
 
     
@@ -317,12 +320,10 @@ const [codeEvalData, setCodeEvalData] = useState(null);
             <FaFlask className="text-sm" /> Evaluate Assignment
           </button>
 
-          <button
-  onClick={e => { e.stopPropagation(); openCodeEvalModal(note); }}
-  className="flex items-center justify-center gap-2 w-32 px-3 py-2 bg-black text-white rounded hover:bg-gray-800 text-sm"
->
+          <button onClick={() => openCodeEvalModal(note._id)}>
   Evaluate Code
 </button>
+
 
         </div>
       </div>
@@ -356,22 +357,13 @@ const [codeEvalData, setCodeEvalData] = useState(null);
 
       {showCodeEvalModal && codeEvalData && (
   <EvaluateCodeModal
-  batchId={batchId}
-  module={selectedModule}
-  day={codeEvalData.day}
-  title={codeEvalData.title}
-  submissions={codeEvalData.submissions}
-  onClose={() => setShowCodeEvalModal(false)}
-  refreshSubmissions={async () => {
-    const res = await axios.get(
-      `http://localhost:5002/api/codeEval/${codeEvalData.title}/${selectedModule}/${codeEvalData.day}`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    setCodeEvalData(prev => ({ ...prev, submissions: res.data }));
-  }}
-/>
-
+    data={codeEvalData}
+    module={selectedModule}
+    onClose={() => setShowCodeEvalModal(false)}
+  />
 )}
+
+
 
 
       {/* Add/Edit Note Modal */}
