@@ -82,7 +82,7 @@ router.post('/generate', async (req, res) => {
       const batchName = student.batch.batchName;
       const rollNo = student.rollNo;
 
-      await generatePDF(name, courseName, batchName, rollNo,email);
+      await generatePDF(name, courseName, batchName, rollNo, email, student.batch.course.modules);
 
       student.certificate = true;
       await student.save();
