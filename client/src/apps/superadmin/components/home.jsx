@@ -163,16 +163,7 @@ useEffect(() => {
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Users online</p>
             </div>
             
-            <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-600 hover:shadow-lg transition-all duration-200">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Storage Used</span>
-                <div className={`w-4 h-4 rounded-full shadow-sm ${overview?.storageUsed > 80 ? "bg-red-500" : "bg-orange-500"}`}></div>
-              </div>
-              <p className={`text-2xl font-bold ${overview?.storageUsed > 80 ? "text-red-600 dark:text-red-400" : "text-orange-600 dark:text-orange-400"}`}>
-                {overview?.storageUsed || "0"}%
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Disk capacity</p>
-            </div>
+            
           </div>
         </div>
       </div>

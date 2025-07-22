@@ -82,15 +82,16 @@ router.get('/assignment-question/:batch/:module/:title', (req, res) => {
 });
 
 router.post('/notes/upload/:batch/:module/:title/:student/:studentid/:studentroll/:day', upload.single('file'), async (req, res) => {
-  const { batch, module, title, student, studentid,studentroll, day } = req.params;
+  const { batch, module, title, student, studentid, studentroll, day } = req.params;
 
   if (!req.file) return res.status(400).json({ error: 'No file' });
 
   const cleanBatch = sanitizeForFolderName(batch);
   const cleanModule = sanitizeForFolderName(module);
   const cleanTitle = sanitizeForFolderName(title);
+  const cleanStudent = sanitizeForFolderName(student.trim()); // trimmed student name
 
-  const key = `${cleanBatch}/${cleanModule}/${cleanTitle}/assignment/${student}_${studentroll}/answer.pdf`;
+  const key = `${cleanBatch}/${cleanModule}/${cleanTitle}/assignment/${cleanStudent}_${studentroll}/answer.pdf`;
 
   try {
     // Upload to S3
@@ -103,9 +104,7 @@ router.post('/notes/upload/:batch/:module/:title/:student/:studentid/:studentrol
 
     // Create or update Report
     let report = await Report.findOne({ student: studentid, module, day });
-
-    report.marksObtained=[-2,-2,-1];
-
+    report.marksObtained = [-2, -2, -1];
     await report.save();
 
     const url = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
@@ -115,9 +114,6 @@ router.post('/notes/upload/:batch/:module/:title/:student/:studentid/:studentrol
     res.status(500).json({ error: 'Internal server error' });
   }
 });
-
-
-
 router.get('/evaluate/:batchId/:module/:title/:day', async (req, res) => {
   const { batchId, module, title, day } = req.params;
 
@@ -138,19 +134,19 @@ router.get('/evaluate/:batchId/:module/:title/:day', async (req, res) => {
 
     const keys = list.Contents?.map(obj => obj.Key) || [];
 
-    // 3. Extract unsanitized student names from folder structure
+    // Extract sanitized + trimmed student names from folder structure
     const studentNames = [...new Set(
       keys
         .filter(k => k.endsWith('/answer.pdf'))
-        .map(k => decodeURIComponent(k.split('/')[4])) // folder name = real student name
+        .map(k => decodeURIComponent(k.split('/')[4].split('_')[0].trim())) // extract name and trim
     )];
 
     const students = await Student.find()
-  .populate('user', 'name') // only fetch `name` field from user
-  .then(res =>
-    res.filter(stu => studentNames.includes(stu.user?.name))
-  );
-    
+      .populate('user', 'name')
+      .then(res =>
+        res.filter(stu => studentNames.includes(stu.user?.name.trim()))
+      );
+
     const pending = [];
 
     for (const student of students) {
@@ -160,14 +156,15 @@ router.get('/evaluate/:batchId/:module/:title/:day', async (req, res) => {
         day: parseInt(day)
       });
 
-      // 5. Only include those not yet evaluated (assignment = marksObtained[2])
+      // Only include those not yet evaluated
       if (!report || report.marksObtained[2] === -1) {
-        const answerKey = `${cleanBatch}/${cleanModule}/${cleanTitle}/assignment/${encodeURIComponent(student.user.name)}_${student.rollNo}/answer.pdf`;
+        const cleanStudentName = encodeURIComponent(student.user.name.trim());
+        const answerKey = `${cleanBatch}/${cleanModule}/${cleanTitle}/assignment/${cleanStudentName}_${student.rollNo}/answer.pdf`;
 
         pending.push({
           studentId: student._id,
           studentName: student.user.name,
-          studentRoll : student.rollNo,
+          studentRoll: student.rollNo,
           answerLink: `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${answerKey}`
         });
       }
@@ -175,9 +172,8 @@ router.get('/evaluate/:batchId/:module/:title/:day', async (req, res) => {
 
     res.json(pending);
   } catch (err) {
-console.error('❌ Evaluation error:', err.stack || err);
-res.status(500).json({ error: 'Failed to fetch submissions', details: err.message });
-
+    console.error('❌ Evaluation error:', err.stack || err);
+    res.status(500).json({ error: 'Failed to fetch submissions', details: err.message });
   }
 });
 

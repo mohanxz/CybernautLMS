@@ -132,8 +132,8 @@ const ReportPage = () => {
                 <th className="p-4 text-left font-semibold">Student Name</th>
                 <th className="p-4 text-left font-semibold">Module</th>
                 <th className="p-4 text-left font-semibold">Day</th>
-                <th className="p-4 text-left font-semibold">Quiz</th>
                 <th className="p-4 text-left font-semibold">Coding</th>
+                <th className="p-4 text-left font-semibold">Quiz</th>
                 <th className="p-4 text-left font-semibold">Assignment</th>
               </tr>
             </thead>

@@ -1,8 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const disk = require("diskusage");
 const os = require("os");
-const path = require("path");
 const User = require("../models/User");
 
 // GET /api/system/overview
@@ -19,15 +17,11 @@ router.get("/overview", async (req, res) => {
     const tenMinAgo = new Date(Date.now() - 10 * 60 * 1000);
     const activeSessions = await User.countDocuments({ lastActive: { $gte: tenMinAgo } });
 
-    // Disk Usage
-    const diskInfo = await disk.check(path.parse(__dirname).root);
-    const used = (((diskInfo.total - diskInfo.free) / diskInfo.total) * 100).toFixed(2);
-
     res.json({
       serverStatus: "online",
       dbHealth,
-      activeSessions,
-      storageUsed: used
+      activeSessions
+      // storageUsed: removed
     });
   } catch (err) {
     console.error("System overview error:", err);

@@ -64,10 +64,12 @@ export default function EvaluateCodeModal({ data, onClose, module }) {
 
         {checkOutputData ? (
           <CodeEval
-            onClose={() => setCheckOutputData(null)}
-            sourceCode={checkOutputData.code}
-            languageId={checkOutputData.language}
-          />
+  onClose={() => setCheckOutputData(null)}
+  sourceCode={checkOutputData.code}
+  languageId={checkOutputData.language}
+  noteId={data.noteId} // ✅ Add this line so test cases can be fetched
+/>
+
         ) : (
           <>
             {data?.submissions?.length === 0 ? (

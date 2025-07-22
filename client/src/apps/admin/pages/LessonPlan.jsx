@@ -87,7 +87,7 @@ export default function LessonPlan() {
 
   const openEvalModal = async (note) => {
     try {
-      const res = await axios.get(`${backendBase}/evaluate/${batchId}/${selectedModule}/${note.title}/${note.day}`);
+      const res = await axios.get(`http://localhost:5002/evaluate/${batchId}/${selectedModule}/${note.title}/${note.day}`);
       setEvalData({ title: note.title, day: note.day, submissions: res.data });
       setShowEvalModal(true);
     } catch (err) {
@@ -349,6 +349,7 @@ export default function LessonPlan() {
               <EvaluationTable
                 submissions={evalData.submissions}
                 handleEvaluate={handleEvaluate}
+                submittingStudentId={submittingStudentId}
               />
             )}
           </div>
@@ -402,9 +403,9 @@ export default function LessonPlan() {
   );
 }
 
-function EvaluationTable({ submissions, handleEvaluate }) {
+function EvaluationTable({ submissions, handleEvaluate ,submittingStudentId}) {
   const [marks, setMarks] = useState({});
-
+  
   return (
     <table className="w-full table-auto border border-gray-300 shadow">
       <thead className="bg-blue-100">

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 
 const languages = [
@@ -7,25 +7,51 @@ const languages = [
   { id: 54, name: "C++ (GCC 9.2.0)" },
   { id: 63, name: "JavaScript (Node.js 12.14.0)" },
 ];
-const CodeEval = ({ sourceCode: initialCode = "", languageId, onClose }) => {
+
+const CodeEval = ({ noteId, sourceCode: initialCode = "", languageId, onClose }) => {
   const [language, setLanguage] = useState(
     languages.find((l) => l.id === languageId) || languages[0]
   );
   const [sourceCode, setSourceCode] = useState(initialCode);
-
-  const [testCases, setTestCases] = useState([
-    { input: "", expectedOutput: "", result: null },
-    { input: "", expectedOutput: "", result: null },
-    { input: "", expectedOutput: "", result: null },
-  ]);
-
+  const [testCases, setTestCases] = useState([]);
   const [isRunning, setIsRunning] = useState(false);
+  const [questionTitle, setQuestionTitle] = useState("");
 
-  const handleTestCaseChange = (index, field, value) => {
-    const updated = [...testCases];
-    updated[index][field] = value;
-    setTestCases(updated);
-  };
+  useEffect(() => {
+    setSourceCode(initialCode);
+  }, [initialCode]);
+
+  useEffect(() => {
+    const lang = languages.find((l) => l.id === languageId);
+    if (lang) setLanguage(lang);
+  }, [languageId]);
+
+  useEffect(() => {
+    const fetchQuestion = async () => {
+      try {
+        const res = await axios.get(`http://localhost:5002/api/coding-questions/by-note/${noteId}`);
+        const question = res.data[0];
+
+        if (question) {
+          setQuestionTitle(question.title);
+          setLanguage(languages.find((l) => l.name.includes(question.language)) || languages[0]);
+          setTestCases(
+            question.testCases.map((tc) => ({
+              input: (tc.input || []).join("\n"),
+              expectedOutput: tc.expectedOutput,
+              hidden: tc.hidden,
+              result: null
+            }))
+          );
+        }
+      } catch (err) {
+        console.error("Failed to load question:", err);
+      }
+    };
+
+    fetchQuestion();
+  }, [noteId]);
+
 
   const handleRun = async () => {
     setIsRunning(true);
@@ -33,9 +59,8 @@ const CodeEval = ({ sourceCode: initialCode = "", languageId, onClose }) => {
 
     for (let i = 0; i < updatedTestCases.length; i++) {
       const { input, expectedOutput } = updatedTestCases[i];
-
       try {
-        const response = await axios.post("http://localhost:5000/run", {
+        const response = await axios.post("http://localhost:5002/api/codeEval/run", {
           language_id: language.id,
           source_code: sourceCode,
           stdin: input,
@@ -43,7 +68,9 @@ const CodeEval = ({ sourceCode: initialCode = "", languageId, onClose }) => {
 
         const output = (response.data.stdout || "").trim();
         updatedTestCases[i].result =
-          output === expectedOutput.trim() ? "Correct" : `Wrong (Got: ${output})`;
+          output === expectedOutput.trim()
+            ? "✅ Correct"
+            : `❌ Wrong (Got: ${output})`;
       } catch (err) {
         updatedTestCases[i].result = "❌ Error running code";
       }
@@ -54,10 +81,27 @@ const CodeEval = ({ sourceCode: initialCode = "", languageId, onClose }) => {
   };
 
   return (
-    <div style={{ padding: 20, fontFamily: "Arial" }}>
+  <div
+    style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      width: "100vw",
+      height: "100vh",
+      background: "#fff",
+      zIndex: 1000,
+      overflowY: "auto",
+      padding: "20px",
+      fontFamily: "Arial",
+    }}
+  >
+    <button onClick={onClose} style={{ position: "absolute", top: 10, right: 10 }}>
+      ✕
+    </button>
 
-      <button onClick={onClose} style={{ float: 'right' }}>✕</button>
+    <div style={{ paddingTop: 40 }}> {/* Push content below close button */}
       <h1>🧠 Code Tester</h1>
+      <h2>{questionTitle}</h2>
 
       <label>Language:</label>
       <select
@@ -90,8 +134,8 @@ const CodeEval = ({ sourceCode: initialCode = "", languageId, onClose }) => {
             e.preventDefault();
             const start = e.target.selectionStart;
             const end = e.target.selectionEnd;
-            const value = sourceCode;
-            const updated = value.substring(0, start) + "  " + value.substring(end);
+            const updated =
+              sourceCode.substring(0, start) + "  " + sourceCode.substring(end);
             setSourceCode(updated);
             setTimeout(() => {
               e.target.selectionStart = e.target.selectionEnd = start + 2;
@@ -103,39 +147,57 @@ const CodeEval = ({ sourceCode: initialCode = "", languageId, onClose }) => {
       <h3>🧪 Test Cases</h3>
       {testCases.map((test, idx) => (
         <div key={idx} style={{ marginBottom: 10 }}>
-          <label>Input #{idx + 1}:</label>
-          <input
-            type="text"
-            value={test.input}
-            onChange={(e) => handleTestCaseChange(idx, "input", e.target.value)}
-            style={{ marginLeft: 10, width: 250 }}
-          />
-          <label style={{ marginLeft: 20 }}>Expected Output:</label>
-          <input
-            type="text"
-            value={test.expectedOutput}
-            onChange={(e) =>
-              handleTestCaseChange(idx, "expectedOutput", e.target.value)
-            }
-            style={{ marginLeft: 10, width: 250 }}
-          />
+          <p>
+            <b>Input #{idx + 1}:</b>{" "}
+            <pre
+              style={{
+                display: "inline-block",
+                background: "#eee",
+                padding: "5px",
+                overflowX: "auto",
+                maxWidth: "100%",
+              }}
+            >
+              {test.input}
+            </pre>
+          </p>
+          <p>
+            <b>Expected Output:</b>{" "}
+            <pre
+              style={{
+                display: "inline-block",
+                background: "#eee",
+                padding: "5px",
+                overflowX: "auto",
+                maxWidth: "100%",
+              }}
+            >
+              {test.expectedOutput}
+            </pre>
+          </p>
           {test.result && (
-            <span style={{ marginLeft: 20 }}>
-              {test.result.includes("✅") ? (
-                <span style={{ color: "green" }}>{test.result}</span>
-              ) : (
-                <span style={{ color: "red" }}>{test.result}</span>
-              )}
+            <span
+              style={{
+                fontWeight: "bold",
+                color: test.result.includes("✅") ? "green" : "red",
+              }}
+            >
+              {test.result}
             </span>
           )}
         </div>
       ))}
 
-      <button onClick={handleRun} disabled={isRunning} style={{ marginTop: 20 }}>
-        ▶️ {isRunning ? "Running..." : "Run Tests"}
-      </button>
+      <div style={{ textAlign: "center", marginTop: 20 }}>
+        <button onClick={handleRun} disabled={isRunning}>
+          ▶️ {isRunning ? "Running..." : "Run Tests"}
+        </button>
+      </div>
     </div>
-  );
+  </div>
+);
+
+
 };
 
 export default CodeEval;

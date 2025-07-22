@@ -101,6 +101,19 @@ const AttemptCodingQuestion = () => {
             ))}
           </select>
         </div>
+            {question.testCases?.filter(tc => !tc.hidden).length > 0 && (
+  <div>
+    <h3 className="text-lg font-semibold mt-6 mb-2">🧪 Sample Test Cases</h3>
+    {question.testCases.filter(tc => !tc.hidden).map((tc, idx) => (
+      <div key={idx} className="mb-4 bg-gray-100 p-3 rounded">
+        <p><strong>Input #{idx + 1}:</strong></p>
+        <pre className="bg-white p-2 rounded text-sm overflow-x-auto">{(tc.input || []).join('\n')}</pre>
+        <p className="mt-2"><strong>Expected Output:</strong></p>
+        <pre className="bg-white p-2 rounded text-sm overflow-x-auto">{tc.expectedOutput}</pre>
+      </div>
+    ))}
+  </div>
+)}
 
         <label className="block font-medium mb-2">Your Code:</label>
         <div className="border border-gray-300 rounded">
