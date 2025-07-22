@@ -417,7 +417,7 @@ function EvaluationTable({ submissions, handleEvaluate ,submittingStudentId}) {
           <th className="p-3 border">Action</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody className="text-black dark:text-white" >
         {submissions.map((sub, index) => (
           <tr key={index} className="text-sm">
             <td className="p-3 border text-center">{index + 1}</td>
@@ -425,7 +425,7 @@ function EvaluationTable({ submissions, handleEvaluate ,submittingStudentId}) {
             <td className="p-3 border text-center">
               <a href={sub.answerLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">View PDF</a>
             </td>
-            <td className="p-3 border text-center dark:text-black">
+            <td className="p-3 border text-center text-black dark:text-black">
               <input
                 type="number"
                 min={0}
