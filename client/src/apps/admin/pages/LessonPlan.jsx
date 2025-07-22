@@ -4,6 +4,8 @@ import axios from 'axios';
 import { FaPlus, FaEdit, FaFlask, FaLink, FaFilePdf } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import EvaluateCodeModal from '../components/EvaluateCodeModal';
+
 
 export default function LessonPlan() {
   const { batchId } = useParams();
@@ -17,10 +19,14 @@ export default function LessonPlan() {
   const [editingNoteId, setEditingNoteId] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showEvalModal, setShowEvalModal] = useState(false);
+  const [showCodeEvalModal, setShowCodeEvalModal] = useState(false);
+  const [codeEvalData, setCodeEvalData] = useState(null);
   const [evalData, setEvalData] = useState(null);
   const [batchDetails, setBatchDetails] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [submittingStudentId, setSubmittingStudentId] = useState(null);
+  
+
 
 
   const backendBase = 'http://localhost:5002';
@@ -88,6 +94,25 @@ export default function LessonPlan() {
       console.error("Failed to load submissions", err);
     }
   };
+  
+  const openCodeEvalModal = async (noteId) => {
+  try {
+    const res = await axios.get(`http://localhost:5002/api/codeEval/${noteId}`);
+    setCodeEvalData({
+      noteId: noteId,
+      submissions: res.data, // studentId -> user.name, rollNo, code
+    });
+    setShowCodeEvalModal(true);
+  } catch (err) {
+    console.error("Failed to load code submissions", err);
+    toast.error("Unable to fetch code submissions.");
+  }
+};
+
+  
+
+
+
 
   const handleSubmit = async () => {
   if (!form.title || !form.day) return alert('Please fill title and day');
@@ -172,6 +197,9 @@ export default function LessonPlan() {
   }
 };
 
+
+
+
   return (
     <div className=" mx-auto p-6 text-gray-900 dark:text-white bg-white dark:bg-black w-full min-h-screen">
       {/* Module switch buttons */}
@@ -237,15 +265,23 @@ export default function LessonPlan() {
         onClick={() => openEvalModal(notes[0])}
         className="flex items-center justify-center gap-2 w-32 px-3 py-2 bg-black text-white rounded hover:bg-gray-800 text-sm"
       >
-        <FaFlask className="text-sm" /> Evaluate
+        <FaFlask className="text-sm" /> Evaluate Assignment
       </button>
+
+      <button onClick={() => openCodeEvalModal(notes[0]._id)}>
+  Evaluate Code
+</button>
       <button
         onClick={() => openModalForEdit(notes[0])}
         className="flex items-center justify-center gap-2 w-32 px-3 py-2 bg-black text-white rounded hover:bg-gray-800 text-sm"
       >
         <FaEdit className="text-sm" /> Edit
       </button>
+      
     </div>
+
+    
+
   </div>
 )}
 
@@ -281,8 +317,14 @@ export default function LessonPlan() {
             onClick={e => { e.stopPropagation(); openEvalModal(note); }}
             className="flex items-center justify-center gap-2 w-32 px-3 py-2 bg-black text-white rounded hover:bg-gray-800 text-sm"
           >
-            <FaFlask className="text-sm" /> Evaluate
+            <FaFlask className="text-sm" /> Evaluate Assignment
           </button>
+
+          <button onClick={() => openCodeEvalModal(note._id)}>
+  Evaluate Code
+</button>
+
+
         </div>
       </div>
     </div>
@@ -312,6 +354,17 @@ export default function LessonPlan() {
           </div>
         </div>
       )}
+
+      {showCodeEvalModal && codeEvalData && (
+  <EvaluateCodeModal
+    data={codeEvalData}
+    module={selectedModule}
+    onClose={() => setShowCodeEvalModal(false)}
+  />
+)}
+
+
+
 
       {/* Add/Edit Note Modal */}
       {showModal && (

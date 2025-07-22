@@ -3,7 +3,6 @@ import { useLocation, useNavigate, Routes, Route } from 'react-router-dom';
 import PrivateRoute from './components/PrivateRoute';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminHome from "./components/AdminHome";
-import EvaluationPage from './pages/EvaluationPage';
 import ReportPage from "./pages/ReportPage";
 import LessonPlan from './pages/LessonPlan';
 import AdminChat from './pages/AdminChat';
@@ -97,6 +96,8 @@ function AppRoutes() {
             </PrivateRoute>
           }
         />
+
+        
 
         <Route
           path="/batch/:batchId/report"

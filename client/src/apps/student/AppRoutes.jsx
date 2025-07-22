@@ -7,6 +7,7 @@ import Sidebar from './components/Sidebar';
 import { ToastContainer } from 'react-toastify';
 import Settings from './pages/Settings';
 import AttemptQuiz from './pages/AttemptQuiz';
+import AttemptCoding from './pages/AttemptCoding';
 import ReportList from './pages/ReportList';
 function AppRoutes() {
   return (
@@ -73,6 +74,15 @@ function AppRoutes() {
           element={
             <PrivateRoute>
               <AttemptQuiz />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/code/attempt/:noteId/:studentId"
+          element={
+            <PrivateRoute>
+              <AttemptCoding />
             </PrivateRoute>
           }
         />
