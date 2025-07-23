@@ -27,6 +27,19 @@ function sanitizeForFolderName(str) {
   return str.replace(/[:*?"<>|\\\/]/g, '').replace(/\s+/g, '_'); // remove illegal chars, spaces -> _
 }
 
+const uploadToS3 = async (key, buffer, contentType = 'application/pdf') => {
+  await s3.send(
+    new PutObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+      Body: buffer,
+      ContentType: contentType,
+    })
+  );
+
+  return `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+};
+
 
 router.post('/upload-assignment', upload.single('file'), async (req, res) => {
   const { batch, module, title } = req.query;
@@ -71,6 +84,58 @@ router.post('/upload-assignment', upload.single('file'), async (req, res) => {
   }
 });
 
+// Upload Project
+router.post('/upload-project', upload.single('file'), async (req, res) => {
+  const { batch, title } = req.query;
+
+  if (!req.file || !batch || !title) {
+    return res.status(400).json({ error: 'Missing file or required params' });
+  }
+
+  try {
+    const batchDoc = await Batch.findById(batch);
+    if (!batchDoc) return res.status(404).json({ error: 'Batch not found' });
+
+    const cleanBatch = sanitizeForFolderName(batchDoc.batchName);
+    const cleanTitle = sanitizeForFolderName(title);
+
+    const key = `${cleanBatch}/project/${cleanTitle}.pdf`;
+    const s3Url = await uploadToS3(key, req.file.buffer); // ✅ fixed
+
+    res.json({ message: 'Project uploaded successfully', s3path: s3Url });
+  } catch (err) {
+    console.error('Upload failed:', err);
+    res.status(500).json({ error: 'Failed to upload project' });
+  }
+});
+
+// Upload Theory
+router.post('/upload-theory', upload.single('file'), async (req, res) => {
+  const { batch, title } = req.query;
+
+  if (!req.file || !batch || !title) {
+    return res.status(400).json({ error: 'Missing file or required params' });
+  }
+
+  try {
+    const batchDoc = await Batch.findById(batch);
+    if (!batchDoc) return res.status(404).json({ error: 'Batch not found' });
+
+    const cleanBatch = sanitizeForFolderName(batchDoc.batchName);
+    const cleanTitle = sanitizeForFolderName(title);
+
+    const key = `${cleanBatch}/theory/${cleanTitle}.pdf`;
+    const s3Url = await uploadToS3(key, req.file.buffer); // ✅ fixed
+
+    res.json({ message: 'Theory uploaded successfully', s3path: s3Url });
+  } catch (err) {
+    console.error('Upload failed:', err);
+    res.status(500).json({ error: 'Failed to upload theory' });
+  }
+});
+
+
+
 router.get('/assignment-question/:batch/:module/:title', (req, res) => {
   const { batch, module, title } = req.params;
     const cleanBatch = sanitizeForFolderName(batch);
@@ -79,6 +144,23 @@ router.get('/assignment-question/:batch/:module/:title', (req, res) => {
   const key = `${cleanBatch}/${cleanModule}/${cleanTitle}/assignment/question.pdf`;
   const s3Url = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
   res.json({ url: s3Url });
+});
+
+router.get('/project-theory/:batch', (req, res) => {
+  const { batch } = req.params;
+  const cleanBatch = sanitizeForFolderName(batch);
+
+  const projectKey = `${cleanBatch}/evaluation/project.pdf`;
+  const theoryKey = `${cleanBatch}/evaluation/theory.pdf`;
+
+  const s3Region = process.env.AWS_REGION;
+  const projectUrl = `https://${bucketName}.s3.${s3Region}.amazonaws.com/${projectKey}`;
+  const theoryUrl = `https://${bucketName}.s3.${s3Region}.amazonaws.com/${theoryKey}`;
+
+  res.json({
+    projectUrl,
+    theoryUrl,
+  });
 });
 
 router.post('/notes/upload/:batch/:module/:title/:student/:studentid/:studentroll/:day', upload.single('file'), async (req, res) => {

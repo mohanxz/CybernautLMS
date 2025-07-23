@@ -18,6 +18,7 @@ const settingsRoutes = require('./routes/settingsRoute.js');
 const quizRoutes = require('./routes/quiz');
 const codingQuestionRoutes = require('./routes/codingQuestion');
 const codeEvalRoutes = require('./routes/codeEval');
+const batchEvaluationRoutes = require('./routes/batchEvaluation.js');
 
 const app = express();
 const allowedOrigins = [
@@ -61,5 +62,6 @@ app.use("/statistics", statisticsRoutes);
 app.use('/api/quiz', quizRoutes);
 app.use('/api/coding-questions', codingQuestionRoutes);
 app.use('/api/codeEval', codeEvalRoutes);
+app.use('/api/batch-evaluation', batchEvaluationRoutes);
 
 app.listen(5002, () => console.log('Admin server on 5002'));

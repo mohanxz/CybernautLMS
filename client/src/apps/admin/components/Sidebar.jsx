@@ -108,6 +108,7 @@ useEffect(() => {
     if (path.includes("/lesson-plan")) return "Lesson Plan";
     if (path.includes("/quiz")) return "Quiz";
     if (path.includes("/report")) return "Report";
+    if (path.includes("/batch-evaluation")) return "Batch Evaluation";
     if (path.includes("/chat")) return "Batch Chat";
     if (path.includes("/code")) return "Coding";
     return "Admin Dashboard";
@@ -200,7 +201,9 @@ useEffect(() => {
 
         {showBatchSubmenu && selectedBatchId && (
           <div className="ml-8 mt-2 space-y-1">
-            {["lesson-plan", "report", "quiz", "chat" , "code"].map((item) => (
+
+            {["lesson-plan", "report", "quiz", "code", "batch-evaluation","chat"].map((item) => (
+
               <NavLink
                 key={item}
                 to={`/admin/batch/${selectedBatchId}/${item}`}
@@ -215,8 +218,10 @@ useEffect(() => {
                 {item === "lesson-plan" && <FaBook className="text-sm" />}
                 {item === "report" && <FaFileAlt className="text-sm" />}
                 {item === "quiz" && <FaClipboardCheck className="text-sm" />}
-                {item === "chat" && <FaComments className="text-sm" />}
                 {item === "code" && <FaCode className="text-sm" />}
+                {item === "batch-evaluation" && <FaClipboardCheck className="text-sm" />}
+                {item === "chat" && <FaComments className="text-sm" />}
+                
                 
                 <span className="text-sm font-medium capitalize">
                   {item.replace("-", " ")}

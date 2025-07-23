@@ -13,6 +13,7 @@ import Sidebar from './components/Sidebar';
 import Settings from './pages/Settings';
 import Quiz from './pages/Quiz';
 import AdminCoding from './pages/AdminCoding';
+import BatchEvaluation from './pages/BatchEvaluation';
 function AppRoutes() {
 
 
@@ -75,12 +76,23 @@ function AppRoutes() {
           }
         />
 
-                <Route
+          <Route
           path="/batch/:batchId/code"
           element={
             <PrivateRoute>
               <Sidebar>
                 <AdminCoding />
+              </Sidebar>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/batch/:batchId/batch-evaluation"
+          element={
+            <PrivateRoute>
+              <Sidebar>
+                <BatchEvaluation />
               </Sidebar>
             </PrivateRoute>
           }
