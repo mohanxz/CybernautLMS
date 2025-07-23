@@ -12,6 +12,9 @@ const {
   ListObjectsV2Command
 } = require('@aws-sdk/client-s3');
 // AWS S3 config
+
+const { HeadObjectCommand } = require('@aws-sdk/client-s3');
+
 const s3 = new S3Client({
   region: process.env.AWS_REGION,
   credentials: {
@@ -168,6 +171,40 @@ router.get('/project-theory/:batch', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch project/theory URLs' });
   }
 });
+
+
+
+router.get('/check-project-upload', async (req, res) => {
+  const { batchName, studentName, rollNo } = req.query;
+
+  if (!batchName || !studentName || !rollNo) {
+    return res.status(400).json({ error: 'Missing required query parameters' });
+  }
+
+  try {
+    const cleanBatch = sanitizeForFolderName(batchName);
+    const cleanStudent = sanitizeForFolderName(studentName.trim());
+
+    const key = `${cleanBatch}/project/project_${cleanStudent}.pdf`;
+
+    // Check object existence using HeadObjectCommand
+    await s3.send(new HeadObjectCommand({
+      Bucket: bucketName,
+      Key: key
+    }));
+
+    const s3Url = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+    res.json({ exists: true, url: s3Url });
+
+  } catch (err) {
+    if (err.name === 'NotFound') {
+      return res.json({ exists: false });
+    }
+    console.error('S3 check error:', err);
+    res.status(500).json({ error: 'Failed to check project upload' });
+  }
+});
+
 
 
 router.post('/notes/upload/:batch/:module/:title/:student/:studentid/:studentroll/:day', upload.single('file'), async (req, res) => {

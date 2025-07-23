@@ -10,9 +10,17 @@ export default function EvaluateCodeModal({ data, onClose, module }) {
   const [submittingStudentId, setSubmittingStudentId] = useState(null);
   const [checkOutputData, setCheckOutputData] = useState(null);
 
-  const handleMarksChange = (studentId, value) => {
-    setMarks(prev => ({ ...prev, [studentId]: value }));
-  };
+
+const handleMarksChange = (studentId, value) => {
+  const numericValue = Number(value);
+  if (numericValue > 10) {
+    toast.error("Marks cannot exceed 10");
+    setMarks(prev => ({ ...prev, [studentId]: 0 }));
+  } else {
+    setMarks(prev => ({ ...prev, [studentId]: numericValue }));
+  }
+};
+
 
   const handleCheckOutput = async (studentId) => {
     try {

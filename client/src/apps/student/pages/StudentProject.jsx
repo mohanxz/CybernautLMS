@@ -1,101 +1,119 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { FaFileAlt, FaUpload, FaCheckCircle } from "react-icons/fa";
 import { toast } from "react-toastify";
+import { FaFilePdf } from "react-icons/fa";
 
 export default function StudentProject() {
-  const [questionUrl, setQuestionUrl] = useState(null);
+  const [student, setStudent] = useState(null);
+  const [batch, setBatch] = useState(null); // string
+  const [questionUrl, setQuestionUrl] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [file, setFile] = useState(null);
-  const [student, setStudent] = useState(null);
-  const [batch, setBatch] = useState(null);
+
+  const fetchStudentData = async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      // Step 1: Get student info
+      const studentRes = await axios.get("http://localhost:5004/auth/student/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setStudent(studentRes.data);
+
+      // Step 2: Get batch info from 5003
+      const batchRes = await axios.get(
+        `http://localhost:5003/student/batch/${studentRes.data._id}`
+      );
+
+      const { batchName } = batchRes.data;
+      setBatch(batchName);
+
+      // Step 3: Get project question if exists
+      const questionRes = await axios.get(`http://localhost:5002/project-theory/${studentRes.data.batch}`);
+      if (questionRes.data?.projectUrl) {
+        setQuestionUrl(questionRes.data.projectUrl);
+      }
+
+      // Step 4: Check if already submitted
+      const checkRes = await axios.get("http://localhost:5002/check-project-upload", {
+        params: {
+          batchName,
+          studentName: studentRes.data.user.name,
+          rollNo: studentRes.data.rollNo,
+        },
+      });
+
+      setSubmitted(checkRes.data.exists);
+    } catch (error) {
+      console.error(error);
+      toast.error("Something went wrong while fetching data");
+    }
+  };
 
   useEffect(() => {
-    const fetchStudent = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const res = await axios.get("http://localhost:5004/auth/student/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setStudent(res.data);
-        setBatch(res.data.batch);
-
-        const batchRes = await axios.get(`http://localhost:5002/project-theory/${res.data.batch}`);
-        if (batchRes.data?.projectUrl) setQuestionUrl(batchRes.data.projectUrl);
-
-        // HEAD request with error handling
-        const key = `${res.data.user.name.trim()}_${res.data.rollNo}`;
-        try {
-          const headRes = await axios.head(`https://your-bucket.s3.amazonaws.com/${key}/project/answer.pdf`);
-          setSubmitted(headRes.status === 200);
-        } catch {
-          setSubmitted(false);
-        }
-      } catch (error) {
-        console.error("Error fetching student/project data:", error);
-        toast.error("Something went wrong. Try again.");
-      }
-    };
-
-    fetchStudent();
+    fetchStudentData();
   }, []);
 
-  const handleSubmit = async () => {
-    if (!file || !batch || !student) {
-      toast.error("Missing file or student data");
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!file) {
+      toast.warning("Please upload a file first.");
       return;
     }
 
-    const fd = new FormData();
-    fd.append("file", file);
-
     try {
-      await axios.post(
-        `http://localhost:5002/upload-project?batch=${batch}&title=project_${student.user.name}`,
-        fd
-      );
-      toast.success("Project submitted!");
+      const fd = new FormData();
+      fd.append("file", file);
+
+      const uploadUrl = `http://localhost:5002/upload-project?batch=${batch}&title=project_${student.user.name}`;
+
+      await axios.post(uploadUrl, fd);
+      toast.success("Project submitted successfully!");
       setSubmitted(true);
     } catch (err) {
       console.error(err);
-      toast.error("Upload failed");
+      toast.error("Failed to upload project");
     }
   };
 
   return (
-    <div className="p-6 dark:bg-gray-900 min-h-screen">
-      <h2 className="text-2xl font-bold mb-4 text-black dark:text-white">Project Submission</h2>
+    <div className="p-4 max-w-xl mx-auto bg-white rounded shadow">
+      <h2 className="text-xl font-bold mb-4">Project Submission</h2>
 
-      {questionUrl ? (
-        <a href={questionUrl} target="_blank" rel="noreferrer" className="text-blue-600 underline">
-          <FaFileAlt className="inline mr-2" /> View Project Question
-        </a>
-      ) : (
-        <p className="text-gray-500">No Project Posted Yet</p>
+      {questionUrl && (
+        <div className="mb-4">
+          <a
+            href={questionUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center px-4 py-2 bg-black text-white rounded hover:bg-gray-800"
+          >
+            <FaFilePdf className="mr-2" />
+            View Project Question
+          </a>
+        </div>
       )}
 
-      <div className="mt-6">
-        {submitted ? (
-          <p className="text-green-600 flex items-center gap-2">
-            <FaCheckCircle /> Submitted Successfully
-          </p>
-        ) : (
-          <>
-            <input
-              type="file"
-              accept="application/pdf"
-              onChange={e => setFile(e.target.files[0])}
-              className="mb-3"
-            />
-            <button
-              onClick={handleSubmit}
-              className="bg-blue-600 text-white px-4 py-2 rounded flex items-center gap-2"
-            >
-              <FaUpload /> Submit Project
-            </button>
-          </>
-        )}
-      </div>
+      {submitted ? (
+        <p className="text-green-600 font-semibold">You have already submitted the project.</p>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input
+            type="file"
+            accept=".pdf"
+            onChange={(e) => setFile(e.target.files[0])}
+            className="block w-full border p-2 rounded"
+          />
+          <button
+            type="submit"
+            className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800"
+          >
+            Submit Project
+          </button>
+        </form>
+      )}
     </div>
   );
 }

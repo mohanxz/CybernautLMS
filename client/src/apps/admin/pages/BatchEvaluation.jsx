@@ -18,74 +18,88 @@ export default function BatchEvaluation() {
 
   const [projectFile, setProjectFile] = useState(null);
   const [theoryFile, setTheoryFile] = useState(null);
+  const [batchDetails, setBatchDetails] = useState({ batchName: '', courseName: '' });
 
   const backendBase = 'http://localhost:5002/api';
 
   useEffect(() => {
-    if (batchId) fetchEvaluation();
-  }, [batchId]);
+  if (batchId) {
+    fetchBatchDetails();
+  }
+}, [batchId]);
 
-  const fetchEvaluation = async () => {
-    try {
-      const evalRes = await axios.get(`${backendBase}/batch-evaluation/${batchId}`);
-      const studentMarksWithUrls = await Promise.all(
-        evalRes.data.studentMarks.map(async (s) => {
-          const answerUrls = await fetchAnswerUrls(s.student);
-          return {
-            ...s,
-            ...answerUrls,
-          };
-        })
-      );
+const fetchBatchDetails = async () => {
+  try {
+    const token = localStorage.getItem('token'); // or however you store JWT
+    const res = await axios.get(`${backendBase}/admin-batches/${batchId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const batch = res.data;
+    setBatchDetails({ batchName: batch.batchName, courseName: batch.course.courseName });
 
-      setEvaluation(evalRes.data);
-      setFormData({
-        projectS3Url: evalRes.data.projectS3Url || '',
-        theoryS3Url: evalRes.data.theoryS3Url || '',
-        studentMarks: studentMarksWithUrls || [],
-      });
-    } catch (err) {
-      if (err.response?.status === 404) {
-        setEvaluation(null);
-      } else {
-        toast.error('Failed to load evaluation');
-      }
-    } finally {
-      setLoading(false);
+    fetchEvaluation(batch.batchName); // call evaluation fetch with batchName
+  } catch (err) {
+    toast.error('Failed to fetch batch details');
+  }
+};
+
+
+  const fetchEvaluation = async (batchNameParam) => {
+  try {
+    const evalRes = await axios.get(`${backendBase}/batch-evaluation/${batchId}`);
+    const studentMarksWithUrls = await Promise.all(
+      evalRes.data.studentMarks.map(async (s) => {
+        const answerUrls = await fetchAnswerUrls(s.student, batchNameParam);
+        return {
+          ...s,
+          ...answerUrls,
+        };
+      })
+    );
+
+    setEvaluation(evalRes.data);
+    setFormData({
+      projectS3Url: evalRes.data.projectS3Url || '',
+      theoryS3Url: evalRes.data.theoryS3Url || '',
+      studentMarks: studentMarksWithUrls || [],
+    });
+  } catch (err) {
+    if (err.response?.status === 404) {
+      setEvaluation(null);
+    } else {
+      toast.error('Failed to load evaluation');
     }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
 
-  const fetchAnswerUrls = async (student) => {
-    try {
-      const res = await axios.get(`${backendBase}/s3-answers`, {
-        params: {
-          batchName: batchId,
-          studentName: student.user?.name,
-          rollNo: student.rollNo,
-        },
-      });
 
-      const checkUrl = async (url) => {
-        try {
-          await axios.head(url);
-          return url;
-        } catch {
-          return null;
-        }
-      };
+  const fetchAnswerUrls = async (student, batchName) => {
+  try {
+    const res = await axios.get(`${backendBase}/s3-answers`, {
+      params: {
+        batchName,
+        studentName: student.user?.name,
+        rollNo: student.rollNo,
+      },
+    });
 
-      const projectUrl = await checkUrl(res.data.projectAnswerUrl);
-      const theoryUrl = await checkUrl(res.data.theoryAnswerUrl);
+    // URLs from backend are either valid or null
+    return {
+      projectAnswerUrl: res.data.projectAnswerUrl || null,
+      theoryAnswerUrl: res.data.theoryAnswerUrl || null,
+    };
+  } catch (err) {
+    console.error('Failed to fetch S3 answer URLs', err);
+    return {
+      projectAnswerUrl: null,
+      theoryAnswerUrl: null,
+    };
+  }
+};
 
-      return {
-        projectAnswerUrl: projectUrl,
-        theoryAnswerUrl: theoryUrl,
-      };
-    } catch (err) {
-      console.error('Failed to fetch S3 answer URLs', err);
-      return {};
-    }
-  };
+
 
   const createEvaluation = async () => {
     try {
@@ -97,12 +111,25 @@ export default function BatchEvaluation() {
     }
   };
 
-  const handleMarksChange = (studentId, field, value) => {
-    const updatedMarks = formData.studentMarks.map(s =>
-      s.student._id === studentId ? { ...s, [field]: value } : s
-    );
-    setFormData(prev => ({ ...prev, studentMarks: updatedMarks }));
-  };
+ const handleMarksChange = (studentId, field, value) => {
+  const numericValue = Number(value);
+
+  if (numericValue > 100) {
+    toast.error("Marks cannot exceed 100");
+    const Marks = formData.studentMarks.map(s =>
+    s.student._id === studentId ? { ...s, [field]: 0 } : s
+  );
+    setFormData(prev => ({ ...prev, studentMarks: Marks }));
+    return;
+
+  }
+
+  const updatedMarks = formData.studentMarks.map(s =>
+    s.student._id === studentId ? { ...s, [field]: value } : s
+  );
+
+  setFormData(prev => ({ ...prev, studentMarks: updatedMarks }));
+};
 
   const uploadFile = async (type) => {
     const file = type === 'project' ? projectFile : theoryFile;
@@ -206,15 +233,21 @@ export default function BatchEvaluation() {
                     <td>{s.student.user?.name}</td>
                     <td>
                       {editMode ? (
-                        <input
-                          type="number"
-                          className="w-16 border p-1 rounded"
-                          value={s.projectMarks}
-                          onChange={e => handleMarksChange(s.student._id, 'projectMarks', e.target.value)}
-                        />
-                      ) : (
-                        s.projectMarks
-                      )}
+  <input
+    type="number"
+    className="w-16 border p-1 rounded"
+    value={s.projectMarks === -1 ? '' : s.projectMarks}
+    min={0}
+    max={100}
+    onChange={e =>
+      handleMarksChange(s.student._id, 'projectMarks', e.target.value)
+    }
+    placeholder="NE"
+  />
+) : (
+  s.projectMarks === -1 ? 'NE' : s.projectMarks
+)}
+
                     </td>
                     <td>
                       {s.projectAnswerUrl ? (
@@ -281,16 +314,21 @@ export default function BatchEvaluation() {
                     <td>{s.student.rollNo}</td>
                     <td>{s.student.user?.name}</td>
                     <td>
-                      {editMode ? (
-                        <input
-                          type="number"
-                          className="w-16 border p-1 rounded"
-                          value={s.theoryMarks}
-                          onChange={e => handleMarksChange(s.student._id, 'theoryMarks', e.target.value)}
-                        />
-                      ) : (
-                        s.theoryMarks
-                      )}
+                     {editMode ? (
+  <input
+    type="number"
+    className="w-16 border p-1 rounded"
+    value={s.theoryMarks === -1 ? '' : s.theoryMarks}
+    min={0}
+    max={100}
+    onChange={e => handleMarksChange(s.student._id, 'theoryMarks', e.target.value)}
+    placeholder="NE"
+  />
+) : (
+  <span>{s.theoryMarks === -1 ? 'NE' : s.theoryMarks}</span>
+)}
+
+
                     </td>
                     <td>
                       {s.theoryAnswerUrl ? (

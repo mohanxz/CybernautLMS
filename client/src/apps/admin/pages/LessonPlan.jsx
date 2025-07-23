@@ -268,9 +268,13 @@ export default function LessonPlan() {
         <FaFlask className="text-sm" /> Evaluate Assignment
       </button>
 
-      <button onClick={() => openCodeEvalModal(notes[0]._id)}>
-  Evaluate Code
+      <button
+  onClick={() => openCodeEvalModal(notes[0]._id)}
+  className="flex items-center justify-center gap-2 w-32 px-3 py-2 bg-black text-white rounded hover:bg-gray-800 text-sm"
+>
+  <FaFlask className="text-sm" /> Evaluate Code
 </button>
+
       <button
         onClick={() => openModalForEdit(notes[0])}
         className="flex items-center justify-center gap-2 w-32 px-3 py-2 bg-black text-white rounded hover:bg-gray-800 text-sm"
@@ -320,8 +324,11 @@ export default function LessonPlan() {
             <FaFlask className="text-sm" /> Evaluate Assignment
           </button>
 
-          <button onClick={() => openCodeEvalModal(note._id)}>
-  Evaluate Code
+          <button
+  onClick={() => openCodeEvalModal(note._id)}
+  className="flex items-center justify-center gap-2 w-32 px-3 py-2 bg-black text-white rounded hover:bg-gray-800 text-sm"
+>
+  <FaFlask className="text-sm" /> Evaluate Code
 </button>
 
 

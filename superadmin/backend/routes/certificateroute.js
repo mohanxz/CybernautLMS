@@ -13,20 +13,26 @@ router.get('/eligible', async (req, res) => {
     const students = await Student.find({ certificate: false }).populate('user');
     const eligible = [];
 
+    
+
     for (let student of students) {
       const reports = await Report.find({ student: student._id });
 
       // ❌ If any marks are -1, student is not eligible
-      let ineligible = reports.some(r =>
-        r.marksObtained.some(mark => mark === -1)
-      );
-      if (ineligible) continue;
+      //let ineligible = reports.some(r =>
+      //  r.marksObtained.some(mark => mark === -1)
+      //);
+      //if (ineligible) continue;*/
 
       const evaluation = await BatchEvaluation.findOne({ batch: student.batch });
       if (!evaluation) continue;
 
+      
+
       const studentEval = evaluation.studentMarks.find(sm => sm.student.toString() === student._id.toString());
       if (!studentEval) continue;
+
+      
 
       if (studentEval.projectMarks === -1 || studentEval.theoryMarks === -1) continue;
 
@@ -48,7 +54,7 @@ router.get('/eligible', async (req, res) => {
       const theoryOutOf25 = (studentEval.theoryMarks / 100) * 25;
 
       const finalScore = normalizedScore + projectOutOf25 + theoryOutOf25;
-
+      console.log(`Final score for ${student.user.name}: ${finalScore}`);
       if (finalScore >= 50) {
         eligible.push(student);
       }
@@ -109,12 +115,12 @@ router.post('/generate', async (req, res) => {
       const theoryOutOf25 = (studentEval.theoryMarks / 100) * 25;
 
       const finalScore = normalizedScore + projectOutOf25 + theoryOutOf25;
-
+      console.log(`Final score for ${student.user.name}: ${finalScore}`);
       const name = student.user.name;
       const email = student.user.email;
       const courseName = student.batch.course.courseName;
       const batchName = student.batch.batchName;
-      const rollNo = student.rollNo;
+      const rollNo = student._id;
 
       await generatePDF(name, courseName, batchName, rollNo, email, student.batch.course.modules, finalScore);
 

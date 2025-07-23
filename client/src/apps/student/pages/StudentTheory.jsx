@@ -10,38 +10,56 @@ export default function StudentTheory() {
   const [student, setStudent] = useState(null);
   const [batch, setBatch] = useState(null);
 
-  useEffect(() => {
-    const fetchStudent = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const res = await axios.get("http://localhost:5004/auth/student/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setStudent(res.data);
-        setBatch(res.data.batch);
+  const fetchStudentData = async () => {
+    try {
+      const token = localStorage.getItem("token");
 
-        const batchRes = await axios.get(`http://localhost:5002/project-theory/${res.data.batch}`);
-        if (batchRes.data?.theoryUrl) setQuestionUrl(batchRes.data.theoryUrl);
+      // Step 1: Get student info
+      const studentRes = await axios.get("http://localhost:5004/auth/student/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-        const key = `${res.data.user.name.trim()}_${res.data.rollNo}`;
-        try {
-          const headRes = await axios.head(`https://your-bucket.s3.amazonaws.com/${key}/theory/answer.pdf`);
-          setSubmitted(headRes.status === 200);
-        } catch {
-          setSubmitted(false);
-        }
-      } catch (error) {
-        console.error("Error fetching student/theory data:", error);
-        toast.error("Something went wrong. Try again.");
+      setStudent(studentRes.data);
+
+      // Step 2: Get batch info
+      const batchRes = await axios.get(
+        `http://localhost:5003/student/batch/${studentRes.data._id}`
+      );
+      const { batchName } = batchRes.data;
+      setBatch(batchName);
+
+      // Step 3: Get theory question
+      const questionRes = await axios.get(
+        `http://localhost:5002/project-theory/${studentRes.data.batch}`
+      );
+      if (questionRes.data?.theoryUrl) {
+        setQuestionUrl(questionRes.data.theoryUrl);
       }
-    };
 
-    fetchStudent();
+      // Step 4: Check if already submitted
+      const checkRes = await axios.get("http://localhost:5002/check-project-upload", {
+        params: {
+          batchName,
+          studentName: studentRes.data.user.name,
+          rollNo: studentRes.data.rollNo,
+          title: `theory_${studentRes.data.user.name}`,
+        },
+      });
+
+      setSubmitted(checkRes.data.exists);
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error("Failed to fetch data");
+    }
+  };
+
+  useEffect(() => {
+    fetchStudentData();
   }, []);
 
   const handleSubmit = async () => {
     if (!file || !batch || !student) {
-      toast.error("Missing file or student data");
+      toast.error("Please select a file");
       return;
     }
 
@@ -53,7 +71,7 @@ export default function StudentTheory() {
         `http://localhost:5002/upload-project?batch=${batch}&title=theory_${student.user.name}`,
         fd
       );
-      toast.success("Theory submitted!");
+      toast.success("Theory uploaded!");
       setSubmitted(true);
     } catch (err) {
       console.error(err);
@@ -66,17 +84,22 @@ export default function StudentTheory() {
       <h2 className="text-2xl font-bold mb-4 text-black dark:text-white">Theory Submission</h2>
 
       {questionUrl ? (
-        <a href={questionUrl} target="_blank" rel="noreferrer" className="text-blue-600 underline">
-          <FaFileAlt className="inline mr-2" /> View Theory Question
+        <a
+          href={questionUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center px-4 py-2 bg-black text-white rounded mb-4"
+        >
+          <FaFileAlt className="mr-2" /> View Theory Question
         </a>
       ) : (
         <p className="text-gray-500">No Theory Posted Yet</p>
       )}
 
-      <div className="mt-6">
+      <div className="mt-4">
         {submitted ? (
           <p className="text-green-600 flex items-center gap-2">
-            <FaCheckCircle /> Submitted Successfully
+            <FaCheckCircle /> Already Submitted
           </p>
         ) : (
           <>
@@ -84,13 +107,13 @@ export default function StudentTheory() {
               type="file"
               accept="application/pdf"
               onChange={e => setFile(e.target.files[0])}
-              className="mb-3"
+              className="mb-3 block"
             />
             <button
               onClick={handleSubmit}
-              className="bg-blue-600 text-white px-4 py-2 rounded flex items-center gap-2"
+              className="inline-flex items-center px-4 py-2 bg-black text-white rounded"
             >
-              <FaUpload /> Submit Theory
+              <FaUpload className="mr-2" /> Submit Theory
             </button>
           </>
         )}
