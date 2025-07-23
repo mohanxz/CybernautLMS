@@ -9,6 +9,11 @@ import Settings from './pages/Settings';
 import AttemptQuiz from './pages/AttemptQuiz';
 import AttemptCoding from './pages/AttemptCoding';
 import ReportList from './pages/ReportList';
+import StudentProject from './pages/StudentProject';
+import StudentTheory from './pages/StudentTheory';
+
+
+
 function AppRoutes() {
   return (
     <>
@@ -97,7 +102,27 @@ function AppRoutes() {
             </PrivateRoute>
           }
         />
+        <Route
+  path="/student/project"
+  element={
+    <PrivateRoute>
+      <Sidebar pageTitle="Project">
+        <StudentProject />
+      </Sidebar>
+    </PrivateRoute>
+  }
+/>
 
+<Route
+  path="/student/theory"
+  element={
+    <PrivateRoute>
+      <Sidebar pageTitle="Theory">
+        <StudentTheory />
+      </Sidebar>
+    </PrivateRoute>
+  }
+/>
       </Routes>
     </>
   );

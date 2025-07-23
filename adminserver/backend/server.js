@@ -19,6 +19,7 @@ const quizRoutes = require('./routes/quiz');
 const codingQuestionRoutes = require('./routes/codingQuestion');
 const codeEvalRoutes = require('./routes/codeEval');
 const batchEvaluationRoutes = require('./routes/batchEvaluation.js');
+const s3Urls = require('./routes/s3Urls'); // ✅ Import correct file
 
 const app = express();
 const allowedOrigins = [
@@ -63,5 +64,7 @@ app.use('/api/quiz', quizRoutes);
 app.use('/api/coding-questions', codingQuestionRoutes);
 app.use('/api/codeEval', codeEvalRoutes);
 app.use('/api/batch-evaluation', batchEvaluationRoutes);
+
+app.use('/api', s3Urls); // ✅ Mount at /api
 
 app.listen(5002, () => console.log('Admin server on 5002'));

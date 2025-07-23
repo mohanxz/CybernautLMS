@@ -13,6 +13,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import Topbar from "./Topbar";
 import bulbImg from '@shared/bulb.png';
+import { FaFileAlt } from "react-icons/fa";
 
 const Sidebar = ({ children, pageTitle }) => {
   const navigate = useNavigate();
@@ -187,6 +188,34 @@ const Sidebar = ({ children, pageTitle }) => {
             <FaCog className="text-lg" />
             <span className="text-sm font-semibold tracking-wide">Settings</span>
           </NavLink>
+          <NavLink
+  to={`/student/project`}
+  className={({ isActive }) =>
+    `flex items-center gap-4 px-4 py-3 my-1 rounded-xl transition-all duration-200 ease-in-out ${
+      isActive
+        ? "bg-blue-700 text-white shadow-lg"
+        : "hover:bg-gray-100 dark:hover:bg-gray-700 text-black dark:text-white"
+    }`
+  }
+>
+  <FaFileAlt className="text-lg" />
+  <span className="text-sm font-semibold tracking-wide">Project</span>
+</NavLink>
+
+<NavLink
+  to={`/student/theory`}
+  className={({ isActive }) =>
+    `flex items-center gap-4 px-4 py-3 my-1 rounded-xl transition-all duration-200 ease-in-out ${
+      isActive
+        ? "bg-blue-700 text-white shadow-lg"
+        : "hover:bg-gray-100 dark:hover:bg-gray-700 text-black dark:text-white"
+    }`
+  }
+>
+  <FaFileAlt className="text-lg" />
+  <span className="text-sm font-semibold tracking-wide">Theory</span>
+</NavLink>
+
         </nav>
 
         {/* Logout */}
