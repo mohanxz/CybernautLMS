@@ -146,22 +146,29 @@ router.get('/assignment-question/:batch/:module/:title', (req, res) => {
   res.json({ url: s3Url });
 });
 
-router.get('/project-theory/:batch', (req, res) => {
+router.get('/project-theory/:batch', async (req, res) => {
   const { batch } = req.params;
-  const cleanBatch = sanitizeForFolderName(batch);
 
-  const projectKey = `${cleanBatch}/evaluation/project.pdf`;
-  const theoryKey = `${cleanBatch}/evaluation/theory.pdf`;
+  try {
+    const batchDoc = await Batch.findById(batch);
+    if (!batchDoc) return res.status(404).json({ error: 'Batch not found' });
 
-  const s3Region = process.env.AWS_REGION;
-  const projectUrl = `https://${bucketName}.s3.${s3Region}.amazonaws.com/${projectKey}`;
-  const theoryUrl = `https://${bucketName}.s3.${s3Region}.amazonaws.com/${theoryKey}`;
+    const cleanBatch = sanitizeForFolderName(batchDoc.batchName);
 
-  res.json({
-    projectUrl,
-    theoryUrl,
-  });
+    const projectKey = `${cleanBatch}/project/FinalEvaluation.pdf`;
+    const theoryKey = `${cleanBatch}/theory/FinalEvaluation.pdf`; // ✅ Corrected path
+
+    const s3Region = process.env.AWS_REGION;
+    const projectUrl = `https://${bucketName}.s3.${s3Region}.amazonaws.com/${projectKey}`;
+    const theoryUrl = `https://${bucketName}.s3.${s3Region}.amazonaws.com/${theoryKey}`;
+
+    res.json({ projectUrl, theoryUrl });
+  } catch (err) {
+    console.error('Error fetching project/theory links:', err);
+    res.status(500).json({ error: 'Failed to fetch project/theory URLs' });
+  }
 });
+
 
 router.post('/notes/upload/:batch/:module/:title/:student/:studentid/:studentroll/:day', upload.single('file'), async (req, res) => {
   const { batch, module, title, student, studentid, studentroll, day } = req.params;

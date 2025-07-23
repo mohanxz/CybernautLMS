@@ -6,10 +6,6 @@ const {
 const path = require("path");
 const fs = require("fs");
 const nodemailer = require("nodemailer");
-const Student = require("../models/Student");
-const Batch = require("../models/Batch");
-const Course = require("../models/Course");
-const User = require("../models/User");
 
 const s3 = new S3Client({
   region: process.env.AWS_REGION,
@@ -23,7 +19,7 @@ const bucketName = process.env.S3_BUCKET;
 
 function imageToBase64(filePath) {
   const image = fs.readFileSync(filePath);
-  const ext = path.extname(filePath).slice(1); // 'jpg', 'png'
+  const ext = path.extname(filePath).slice(1);
   return `data:image/${ext};base64,${image.toString("base64")}`;
 }
 
@@ -60,14 +56,13 @@ function getCurrentDate() {
   });
 }
 
-async function generatePDF(name, courseName, batchName, rollNo, email, modules = []) {
+async function generatePDF(name, courseName, batchName, rollNo, email, modules = [], finalScore) {
   const isTechTrio = courseName.trim().toLowerCase() === "tech trio";
   const modulesToUse = isTechTrio && modules.length > 0 ? modules : [courseName];
 
   const browser = await puppeteer.launch();
   const attachments = [];
 
-  // Base64 Images
   const logoBase64 = imageToBase64(path.join(__dirname, "../assets/logo.jpg"));
   const sign1Base64 = imageToBase64(path.join(__dirname, "../assets/sign1.jpg"));
   const sign2Base64 = imageToBase64(path.join(__dirname, "../assets/sign2.jpg"));
@@ -84,15 +79,11 @@ async function generatePDF(name, courseName, batchName, rollNo, email, modules =
       .replace(/{{sign2}}/g, sign2Base64)
       .replace(/&lt;&lt;{{name}}&gt;&gt;/g, name)
       .replace(/&lt;&lt;Date&gt;&gt;/g, getCurrentDate())
-      .replace(/&lt;&lt;UNIQUE_ID&gt;&gt;/g, rollNo) // or generate UUID
-      .replace(/&lt;&lt;Per&gt;&gt;/g, "95");
+      .replace(/&lt;&lt;UNIQUE_ID&gt;&gt;/g, rollNo)
+      .replace(/&lt;&lt;Per&gt;&gt;/g, finalScore.toFixed(2));
 
     await page.setContent(html, { waitUntil: "networkidle0" });
-    const pdfBuffer = await page.pdf({
-      width: "1200px",
-      height: "950px",
-      printBackground: true,
-    });
+    const pdfBuffer = await page.pdf({ width: "1200px", height: "950px", printBackground: true });
 
     const safeName = sanitizeForPath(name);
     const safeBatch = sanitizeForPath(batchName);
@@ -108,12 +99,7 @@ async function generatePDF(name, courseName, batchName, rollNo, email, modules =
       ContentType: "application/pdf",
     }));
 
-    attachments.push({
-      filename: fileName,
-      content: pdfBuffer,
-      contentType: "application/pdf",
-    });
-
+    attachments.push({ filename: fileName, content: pdfBuffer, contentType: "application/pdf" });
     console.log("✅ Uploaded to S3:", s3Key);
   }
 

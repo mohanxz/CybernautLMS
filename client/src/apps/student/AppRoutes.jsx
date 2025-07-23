@@ -103,7 +103,7 @@ function AppRoutes() {
           }
         />
         <Route
-  path="/student/project"
+  path="/project"
   element={
     <PrivateRoute>
       <Sidebar pageTitle="Project">
@@ -114,7 +114,7 @@ function AppRoutes() {
 />
 
 <Route
-  path="/student/theory"
+  path="/theory"
   element={
     <PrivateRoute>
       <Sidebar pageTitle="Theory">

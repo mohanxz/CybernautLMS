@@ -4,48 +4,54 @@ const Student = require('../models/Student');
 const Batch = require('../models/Batch');
 const Course = require('../models/Course');
 const Report = require('../models/Report');
+const BatchEvaluation = require('../models/BatchEvaluation');
 const { generatePDF } = require('../utils/generatePDF');
-const { sendMail } = require('../utils/sendMail');
 
+// ✅ Get eligible students
 router.get('/eligible', async (req, res) => {
   try {
     const students = await Student.find({ certificate: false }).populate('user');
-    
-    let eligible = [];
+    const eligible = [];
 
     for (let student of students) {
       const reports = await Report.find({ student: student._id });
-    
-      const moduleMap = {};
+
+      // ❌ If any marks are -1, student is not eligible
+      let ineligible = reports.some(r =>
+        r.marksObtained.some(mark => mark === -1)
+      );
+      if (ineligible) continue;
+
+      const evaluation = await BatchEvaluation.findOne({ batch: student.batch });
+      if (!evaluation) continue;
+
+      const studentEval = evaluation.studentMarks.find(sm => sm.student.toString() === student._id.toString());
+      if (!studentEval) continue;
+
+      if (studentEval.projectMarks === -1 || studentEval.theoryMarks === -1) continue;
+
+      // ✅ All checks passed, compute scores
+      let codingTotal = 0;
+      let quizTotal = 0;
+      let assignmentTotal = 0;
 
       reports.forEach(r => {
-        if (!moduleMap[r.module]) moduleMap[r.module] = { quizzes: [], assignments: [], count: 0 };
-        moduleMap[r.module].quizzes.push(r.marksObtained[0]);      // Quiz marks
-        moduleMap[r.module].assignments.push(r.marksObtained[2]);  // Assignment marks
-        moduleMap[r.module].count += 1;
+        codingTotal += r.marksObtained[0];
+        quizTotal += r.marksObtained[1];
+        assignmentTotal += r.marksObtained[2];
       });
 
-      let pass = true;
+      const totalMarks = codingTotal + quizTotal + assignmentTotal;
+      const normalizedScore = (totalMarks / 340) * 50;
 
-      for (let module in moduleMap) {
-        const data = moduleMap[module];
+      const projectOutOf25 = (studentEval.projectMarks / 100) * 25;
+      const theoryOutOf25 = (studentEval.theoryMarks / 100) * 25;
 
-        if (data.count < 1) {  // Minimum 4 reports required
-          pass = false;
-          break;
-        }
+      const finalScore = normalizedScore + projectOutOf25 + theoryOutOf25;
 
-        const quizAvg = data.quizzes.reduce((a, b) => a + b, 0) / data.quizzes.length;
-        const assignAvg = data.assignments.reduce((a, b) => a + b, 0) / data.assignments.length;
-
-        if (quizAvg < -2 || assignAvg < -2) {
-          pass = false;
-          break;
-        }
+      if (finalScore >= 50) {
+        eligible.push(student);
       }
-
-      if (pass) eligible.push(student);
-      
     }
 
     res.json(eligible);
@@ -55,20 +61,17 @@ router.get('/eligible', async (req, res) => {
   }
 });
 
-
+// ✅ Generate certificates
 router.post('/generate', async (req, res) => {
   try {
-    const { students } = req.body; // array of student ids
+    const { students } = req.body;
 
     for (let id of students) {
       const student = await Student.findById(id)
         .populate('user')
         .populate({
           path: 'batch',
-          populate: {
-            path: 'course',
-            model: 'Course'
-          }
+          populate: { path: 'course', model: 'Course' }
         });
 
       if (!student || !student.user || !student.batch || !student.batch.course) {
@@ -76,13 +79,44 @@ router.post('/generate', async (req, res) => {
         continue;
       }
 
+      const reports = await Report.find({ student: student._id });
+
+      const ineligible = reports.some(r =>
+        r.marksObtained.some(mark => mark === -1)
+      );
+      if (ineligible) continue;
+
+      const evaluation = await BatchEvaluation.findOne({ batch: student.batch });
+      if (!evaluation) continue;
+
+      const studentEval = evaluation.studentMarks.find(sm => sm.student.toString() === student._id.toString());
+      if (!studentEval || studentEval.projectMarks === -1 || studentEval.theoryMarks === -1) continue;
+
+      let codingTotal = 0;
+      let quizTotal = 0;
+      let assignmentTotal = 0;
+
+      reports.forEach(r => {
+        codingTotal += r.marksObtained[0];
+        quizTotal += r.marksObtained[1];
+        assignmentTotal += r.marksObtained[2];
+      });
+
+      const totalMarks = codingTotal + quizTotal + assignmentTotal;
+      const normalizedScore = (totalMarks / 340) * 50;
+
+      const projectOutOf25 = (studentEval.projectMarks / 100) * 25;
+      const theoryOutOf25 = (studentEval.theoryMarks / 100) * 25;
+
+      const finalScore = normalizedScore + projectOutOf25 + theoryOutOf25;
+
       const name = student.user.name;
       const email = student.user.email;
       const courseName = student.batch.course.courseName;
       const batchName = student.batch.batchName;
       const rollNo = student.rollNo;
 
-      await generatePDF(name, courseName, batchName, rollNo, email, student.batch.course.modules);
+      await generatePDF(name, courseName, batchName, rollNo, email, student.batch.course.modules, finalScore);
 
       student.certificate = true;
       await student.save();
