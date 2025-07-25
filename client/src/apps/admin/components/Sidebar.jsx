@@ -103,7 +103,7 @@ useEffect(() => {
     if (path === "/admin/" || path === "/admin") return "Dashboard";
     if (path === "/admin/batches") return "My Batches";
     if (path === "/admin/students") return "My Students";
-    if (path === "/admin/settings") return "Settings";
+    if (path === "/admin/settings") return "Profile";
     if (path === "/admin/superadmin-chat") return "SuperAdmin Chat";
     if (path.includes("/lesson-plan")) return "Lesson Plan";
     if (path.includes("/quiz")) return "Quiz";

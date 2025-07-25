@@ -18,7 +18,7 @@ const menuItems = [
   { id: "salary", icon: <FaMoneyBill />, label: "Salary Management", path: "/superadmin/salary" },
   { id: "communication", icon: <FaEnvelope />, label: "Communication", path: "/superadmin/communication" },
   { id: "analytics", icon: <FaChartPie />, label: "Analytics", path: "/superadmin/analytics" },
-  { id: "setings", icon: <FaCog />, label: "Settings", path: "/superadmin/settings" },
+  { id: "setings", icon: <FaCog />, label: "Profile", path: "/superadmin/settings" },
   { id: "certificates", icon: <FaChartBar />, label: "Certificates", path: "/superadmin/certificates" }
 
 ];
