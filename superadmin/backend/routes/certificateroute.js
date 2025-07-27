@@ -4,6 +4,7 @@ const Student = require('../models/Student');
 const Batch = require('../models/Batch');
 const Course = require('../models/Course');
 const Report = require('../models/Report');
+const BatchEvaluation = require('../models/BatchEvaluation');
 const { generatePDF } = require('../utils/generatePDF');
 const { sendMail } = require('../utils/sendMail');
 
@@ -12,11 +13,9 @@ const { sendMail } = require('../utils/sendMail');
 // ✅ Modified GET /eligible route
 router.get('/eligible', async (req, res) => {
   try {
-    const { batchId } = req.query;
+    
 
-    const batches = await Batch.find(batchId ? { _id: batchId } : {})
-      .populate('course')
-      .populate('admins.admin');
+    const batches = await Batch.find();
 
     const results = [];
 
@@ -28,6 +27,7 @@ router.get('/eligible', async (req, res) => {
         .populate('user', 'name email')
         .populate('batch', 'batchName');
 
+      
       const evaluation = await BatchEvaluation.findOne({ batch: batch._id });
 
       const eligible = [];
@@ -39,6 +39,7 @@ router.get('/eligible', async (req, res) => {
         const studentEval = evaluation?.studentMarks.find(
           sm => sm.student.toString() === student._id.toString()
         );
+
 
         const studentData = {
           _id: student._id,
@@ -60,20 +61,23 @@ router.get('/eligible', async (req, res) => {
         };
 
         if (!studentEval ||
-            studentEval.projectMarks === -1 ||
-            studentEval.theoryMarks === -1 ||
-            reports.length === 0 ||
-            reports.some(r => r.marksObtained.some(mark => mark === -1))) {
+            studentEval.projectMarks >= 0 ||
+            studentEval.theoryMarks >= 0 ||
+            reports.length === 0 ) {
           ineligible.push({ ...studentData, reason: 'Incomplete reports or evaluation' });
           continue;
         }
 
         let codingTotal = 0, quizTotal = 0, assignmentTotal = 0;
-        reports.forEach(r => {
-          codingTotal += r.marksObtained[0];
-          quizTotal += r.marksObtained[1];
-          assignmentTotal += r.marksObtained[2];
-        });
+        
+reports.forEach(r => {
+  const [coding, quiz, assignment] = r.marksObtained;
+
+  if (coding > 0) codingTotal += coding;
+  if (quiz > 0) quizTotal += quiz;
+  if (assignment > 0) assignmentTotal += assignment;
+});
+
 
         const totalMarks = codingTotal + quizTotal + assignmentTotal;
         const normalizedScore = (totalMarks / 340) * 50;
@@ -115,6 +119,7 @@ router.get('/eligible', async (req, res) => {
     }
 
     res.json(results);
+    console.log('Results:', results );
   } catch (err) {
     console.error('Error fetching eligible students:', err);
     res.status(500).send('Server Error');

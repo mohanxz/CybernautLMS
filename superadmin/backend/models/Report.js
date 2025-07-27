@@ -16,7 +16,7 @@ const reportSchema = new mongoose.Schema({
   },
   marksObtained: {
     type: [Number],
-    default: [-1, -1, -1],
+    default: [-2, -2, -2],
     validate: {
       validator: function (v) {
         return v.length === 3;
