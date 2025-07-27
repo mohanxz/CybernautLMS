@@ -15,12 +15,10 @@ router.get('/s3-answers', async (req, res) => {
     const s3Base = `https://${process.env.S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com`;
 
     const projectKey = `${encodedBatch}/evaluation/project/answers/${encodedStudent}_${rollNo}/answer.pdf`;
-    const theoryKey = `${encodedBatch}/evaluation/theory/answers/${encodedStudent}_${rollNo}/answer.pdf`;
 
     const projectAnswerUrl = `${s3Base}/${projectKey}`;
-    const theoryAnswerUrl = `${s3Base}/${theoryKey}`;
 
-    res.json({ projectAnswerUrl, theoryAnswerUrl });
+    res.json({ projectAnswerUrl });
   } catch (err) {
     console.error('Error generating S3 URLs:', err);
     res.status(500).json({ error: 'Failed to generate S3 URLs' });

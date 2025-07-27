@@ -1,0 +1,32 @@
+version: "3.8"
+
+services:
+  loginserver:
+    image: charan201204/loginserver:latest
+    ports:
+      - "5004:5004"
+
+  superadmin:
+    image: charan201204/superadmin:latest
+    ports:
+      - "5001:5001"
+
+  adminserver:
+    image: charan201204/adminserver:latest
+    ports:
+      - "5002:5002"
+
+  studentserver:
+    image: charan201204/studentserver:latest
+    ports:
+      - "5003:5003"
+
+  chatserver:
+    image: charan201204/chatserver:latest
+    ports:
+      - "5006:5006"
+
+  client:
+    image: charan201204/client:latest
+    ports:
+      - "5173:80"

@@ -5,7 +5,7 @@ const Student = require('../models/Student');
 
 // ✅ Create evaluation entry for batch
 router.post('/', async (req, res) => {
-  const { batch, projectS3Url, theoryS3Url } = req.body;
+  const { batch, projectS3Url } = req.body;
 
   try {
     const students = await Student.find({ batch });
@@ -19,7 +19,6 @@ router.post('/', async (req, res) => {
     const evaluation = new BatchEvaluation({
       batch,
       projectS3Url,
-      theoryS3Url,
       studentMarks
     });
 
@@ -57,21 +56,19 @@ router.get('/:batchId', async (req, res) => {
 
 // ✅ Update evaluation: file URLs or student marks
 router.put('/:id', async (req, res) => {
-  const { projectS3Url, theoryS3Url, studentMarks } = req.body;
+  const { projectS3Url, studentMarks } = req.body;
 
   try {
     const evaluation = await BatchEvaluation.findById(req.params.id);
     if (!evaluation) return res.status(404).json({ message: "Evaluation not found" });
 
     if (projectS3Url !== undefined) evaluation.projectS3Url = projectS3Url;
-    if (theoryS3Url !== undefined) evaluation.theoryS3Url = theoryS3Url;
 
     if (Array.isArray(studentMarks)) {
       studentMarks.forEach(mark => {
         const target = evaluation.studentMarks.find(s => s.student.toString() === mark.student);
         if (target) {
           if (mark.projectMarks !== undefined) target.projectMarks = mark.projectMarks;
-          if (mark.theoryMarks !== undefined) target.theoryMarks = mark.theoryMarks;
         }
       });
     }
