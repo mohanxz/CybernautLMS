@@ -20,7 +20,8 @@ const codingQuestionRoutes = require('./routes/codingQuestion');
 const codeEvalRoutes = require('./routes/codeEval');
 const batchEvaluationRoutes = require('./routes/batchEvaluation.js');
 const s3Urls = require('./routes/s3Urls'); // ✅ Import correct file
-
+const finalassgnRoutes = require('./routes/finalAssignment.js');
+const courseRoutes = require("./routes/courseRoute");
 const app = express();
 const allowedOrigins = [
   'http://localhost:5173'
@@ -61,9 +62,11 @@ app.use("/api/students", studentRoutes);
 app.use('/api/settings',settingsRoutes);
 app.use("/statistics", statisticsRoutes);
 app.use('/api/quiz', quizRoutes);
+app.use("/api/course", courseRoutes);
 app.use('/api/coding-questions', codingQuestionRoutes);
 app.use('/api/codeEval', codeEvalRoutes);
 app.use('/api/batch-evaluation', batchEvaluationRoutes);
+app.use('/api/final-assignment', finalassgnRoutes);
 
 app.use('/api', s3Urls); // ✅ Mount at /api
 

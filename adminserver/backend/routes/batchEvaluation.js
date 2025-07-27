@@ -4,10 +4,24 @@ const BatchEvaluation = require('../models/BatchEvaluation');
 const Student = require('../models/Student');
 
 // ✅ Create evaluation entry for batch
+// ✅ Create evaluation entry for batch and module
 router.post('/', async (req, res) => {
-  const { batch, projectS3Url } = req.body;
+  const { batch, module, projectS3Url } = req.body;
+
+  if (!batch || !module) {
+    return res.status(400).json({ message: "Batch and module are required" });
+  }
+
+  console.log("Creating evaluation for:", batch, module);
 
   try {
+    // Check if evaluation already exists for this batch and module
+    const existingEvaluation = await BatchEvaluation.findOne({ batch, module });
+
+    if (existingEvaluation) {
+      return res.status(400).json({ message: "Evaluation already exists for this batch and module" });
+    }
+
     const students = await Student.find({ batch });
 
     const studentMarks = students.map(student => ({
@@ -18,6 +32,7 @@ router.post('/', async (req, res) => {
 
     const evaluation = new BatchEvaluation({
       batch,
+      module,
       projectS3Url,
       studentMarks
     });
@@ -26,24 +41,27 @@ router.post('/', async (req, res) => {
 
     res.status(201).json({ message: "Evaluation created", evaluation });
   } catch (err) {
-    if (err.code === 11000) {
-      return res.status(400).json({ message: "Evaluation already exists for this batch" });
-    }
     res.status(500).json({ error: "Failed to create evaluation", details: err.message });
+    console.log(err.message);
   }
 });
 
 
+
+
 // ✅ Get evaluation by batch
-router.get('/:batchId', async (req, res) => {
+// GET /api/batch-evaluation/:batchId/:module
+router.get('/:batchId/:module', async (req, res) => {
   try {
-    const evaluation = await BatchEvaluation.findOne({ batch: req.params.batchId })
+    const evaluation = await BatchEvaluation.findOne({
+      batch: req.params.batchId,
+      module: req.params.module
+    })
       .populate('studentMarks.student', 'rollNo user')
       .populate({
         path: 'studentMarks.student',
         populate: { path: 'user', select: 'name email' }
       });
-      
 
     if (!evaluation) return res.status(404).json({ message: "Evaluation not found" });
 
@@ -52,6 +70,7 @@ router.get('/:batchId', async (req, res) => {
     res.status(500).json({ error: "Failed to fetch evaluation", details: err.message });
   }
 });
+
 
 
 // ✅ Update evaluation: file URLs or student marks

@@ -18,10 +18,12 @@ const studentMarkSchema = new mongoose.Schema({
 });
 
 const batchEvaluationSchema = new mongoose.Schema({
-  batch: { type: mongoose.Schema.Types.ObjectId, ref: 'Batch', required: true, unique: true },
+  batch: { type: mongoose.Schema.Types.ObjectId, ref: 'Batch', required: true },
+  module: { type: String, required: true },
   projectS3Url: { type: String, default: "" },
   studentMarks: [studentMarkSchema],
   questions: [questionSchema]
 }, { timestamps: true });
+
 
 module.exports = mongoose.model("BatchEvaluation", batchEvaluationSchema);
