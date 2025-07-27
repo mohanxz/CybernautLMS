@@ -7,91 +7,218 @@ const Report = require('../models/Report');
 const { generatePDF } = require('../utils/generatePDF');
 const { sendMail } = require('../utils/sendMail');
 
+
+// ✅ Get eligible students
+// ✅ Modified GET /eligible route
 router.get('/eligible', async (req, res) => {
   try {
-    const students = await Student.find({ certificate: false }).populate('user');
-    
-    let eligible = [];
+    const { batchId } = req.query;
 
-    for (let student of students) {
-      const reports = await Report.find({ student: student._id });
-    
-      const moduleMap = {};
+    const batches = await Batch.find(batchId ? { _id: batchId } : {})
+      .populate('course')
+      .populate('admins.admin');
 
-      reports.forEach(r => {
-        if (!moduleMap[r.module]) moduleMap[r.module] = { quizzes: [], assignments: [], count: 0 };
-        moduleMap[r.module].quizzes.push(r.marksObtained[0]);      // Quiz marks
-        moduleMap[r.module].assignments.push(r.marksObtained[2]);  // Assignment marks
-        moduleMap[r.module].count += 1;
-      });
+    const results = [];
 
-      let pass = true;
+    for (let batch of batches) {
+      const isBatchCompleted = batch.admins.every(a => a.ifCompleted === true);
+      if (!isBatchCompleted) continue;
 
-      for (let module in moduleMap) {
-        const data = moduleMap[module];
+      const students = await Student.find({ batch: batch._id })
+        .populate('user', 'name email')
+        .populate('batch', 'batchName');
 
-        if (data.count < 1) {  // Minimum 4 reports required
-          pass = false;
-          break;
+      const evaluation = await BatchEvaluation.findOne({ batch: batch._id });
+
+      const eligible = [];
+      const ineligible = [];
+
+      for (let student of students) {
+        const reports = await Report.find({ student: student._id });
+
+        const studentEval = evaluation?.studentMarks.find(
+          sm => sm.student.toString() === student._id.toString()
+        );
+
+        const studentData = {
+          _id: student._id,
+          user: student.user,
+          batch: student.batch,
+          phone: student.phone,
+          address: student.address,
+          dob: student.dob,
+          rollNo: student.rollNo,
+          marks: {
+            codingTotal: 0,
+            quizTotal: 0,
+            assignmentTotal: 0,
+            projectMarks: -1,
+            theoryMarks: -1,
+            finalScore: 0
+          },
+          status: "Ineligible"
+        };
+
+        if (!studentEval ||
+            studentEval.projectMarks === -1 ||
+            studentEval.theoryMarks === -1 ||
+            reports.length === 0 ||
+            reports.some(r => r.marksObtained.some(mark => mark === -1))) {
+          ineligible.push({ ...studentData, reason: 'Incomplete reports or evaluation' });
+          continue;
         }
 
-        const quizAvg = data.quizzes.reduce((a, b) => a + b, 0) / data.quizzes.length;
-        const assignAvg = data.assignments.reduce((a, b) => a + b, 0) / data.assignments.length;
+        let codingTotal = 0, quizTotal = 0, assignmentTotal = 0;
+        reports.forEach(r => {
+          codingTotal += r.marksObtained[0];
+          quizTotal += r.marksObtained[1];
+          assignmentTotal += r.marksObtained[2];
+        });
 
-        if (quizAvg < -2 || assignAvg < -2) {
-          pass = false;
-          break;
+        const totalMarks = codingTotal + quizTotal + assignmentTotal;
+        const normalizedScore = (totalMarks / 340) * 50;
+        const projectOutOf25 = (studentEval.projectMarks / 100) * 25;
+        const theoryOutOf25 = (studentEval.theoryMarks / 100) * 25;
+        const finalScore = +(normalizedScore + projectOutOf25 + theoryOutOf25).toFixed(2);
+
+        studentData.marks = {
+          codingTotal,
+          quizTotal,
+          assignmentTotal,
+          projectMarks: studentEval.projectMarks,
+          theoryMarks: studentEval.theoryMarks,
+          finalScore
+        };
+
+        if (finalScore >= 50) {
+          studentData.status = "Eligible";
+          eligible.push(studentData);
+        } else {
+          ineligible.push({ ...studentData, status: "Ineligible", reason: 'Final score < 50' });
         }
       }
 
-      if (pass) eligible.push(student);
-      
+      // Sort by score descending
+      eligible.sort((a, b) => b.marks.finalScore - a.marks.finalScore);
+      ineligible.sort((a, b) => b.marks.finalScore - a.marks.finalScore);
+
+      results.push({
+        batch: {
+          id: batch._id,
+          name: batch.batchName,
+          course: batch.course.courseName,
+          startDate: batch.startDate,
+        },
+        eligible,
+        ineligible
+      });
     }
 
-    res.json(eligible);
+    res.json(results);
   } catch (err) {
-    console.error(err);
+    console.error('Error fetching eligible students:', err);
+    res.status(500).send('Server Error');
+  }
+});
+
+// GET /incomplete-batches
+router.get('/incomplete-batches', async (req, res) => {
+  try {
+    const batches = await Batch.find()
+      .populate('course')
+      .populate('admins.admin');
+
+    const incompleteBatches = batches.filter(batch =>
+      batch.admins.some(admin => !admin.ifCompleted)
+    ).map(batch => ({
+      id: batch._id,
+      name: batch.batchName,
+      course: batch.course.courseName,
+      startDate: batch.startDate,
+      admins: batch.admins.map(a => ({
+        name: a.admin.name,
+        email: a.admin.email,
+        ifCompleted: a.ifCompleted
+      }))
+    }));
+
+    res.json(incompleteBatches);
+  } catch (err) {
+    console.error('Error fetching incomplete batches:', err);
     res.status(500).send('Server Error');
   }
 });
 
 
-router.post('/generate', async (req, res) => {
+// ✅ Generate certificates
+// POST /generate/batch/:batchId
+router.post('/generate/batch/:batchId', async (req, res) => {
   try {
-    const { students } = req.body; // array of student ids
+    const { batchId } = req.params;
 
-    for (let id of students) {
-      const student = await Student.findById(id)
-        .populate('user')
-        .populate({
-          path: 'batch',
-          populate: {
-            path: 'course',
-            model: 'Course'
-          }
-        });
+    const batch = await Batch.findById(batchId)
+      .populate('course')
+      .populate('admins.admin');
 
-      if (!student || !student.user || !student.batch || !student.batch.course) {
-        console.warn(`Skipping student ID ${id} due to missing data`);
+    if (!batch) return res.status(404).send('Batch not found');
+
+    const isBatchCompleted = batch.admins.every(a => a.ifCompleted === true);
+    if (!isBatchCompleted) {
+      return res.status(400).send('Batch module evaluations not completed by all admins');
+    }
+
+
+    const evaluation = await BatchEvaluation.findOne({ batch: batchId });
+    const students = await Student.find({ batch: batchId }).populate('user');
+
+    const generated = [];
+
+    for (let student of students) {
+      const reports = await Report.find({ student: student._id });
+
+      const studentEval = evaluation?.studentMarks.find(
+        sm => sm.student.toString() === student._id.toString()
+      );
+
+      if (!studentEval ||
+          studentEval.projectMarks === -1 ||
+          studentEval.theoryMarks === -1 ||
+          reports.length === 0 ||
+          reports.some(r => r.marksObtained.some(mark => mark === -1))) {
         continue;
       }
 
-      const name = student.user.name;
-      const email = student.user.email;
-      const courseName = student.batch.course.courseName;
-      const batchName = student.batch.batchName;
-      const rollNo = student.rollNo;
+      let codingTotal = 0, quizTotal = 0, assignmentTotal = 0;
 
-      await generatePDF(name, courseName, batchName, rollNo, email, student.batch.course.modules);
+      reports.forEach(r => {
+        codingTotal += r.marksObtained[0];
+        quizTotal += r.marksObtained[1];
+        assignmentTotal += r.marksObtained[2];
+      });
 
-      student.certificate = true;
-      await student.save();
+      const totalMarks = codingTotal + quizTotal + assignmentTotal;
+      const normalizedScore = (totalMarks / 340) * 50;
+      const projectOutOf25 = (studentEval.projectMarks / 100) * 25;
+      const theoryOutOf25 = (studentEval.theoryMarks / 100) * 25;
+      const finalScore = normalizedScore + projectOutOf25 + theoryOutOf25;
+
+      if (finalScore >= 50) {
+        // ✅ Generate certificate PDF or link here
+        generated.push({
+          studentName: student.user.name,
+          email: student.user.email,
+          finalScore,
+          message: 'Certificate generated successfully'
+        });
+
+        // e.g. call generateCertificatePDF(student, finalScore, batch.course.courseName)
+      }
     }
 
-    res.status(200).json({ message: "Certificates generated and sent." });
+    res.json({ batchName: batch.batchName, generated });
   } catch (err) {
-    console.error(err);
-    res.status(500).send('Error generating certificates');
+    console.error('Error generating batch certificates:', err);
+    res.status(500).send('Server Error');
   }
 });
 

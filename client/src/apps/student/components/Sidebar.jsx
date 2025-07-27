@@ -186,7 +186,7 @@ const Sidebar = ({ children, pageTitle }) => {
             }
           >
             <FaCog className="text-lg" />
-            <span className="text-sm font-semibold tracking-wide">Settings</span>
+            <span className="text-sm font-semibold tracking-wide">Profile</span>
           </NavLink>
           <NavLink
   to={`/student/project`}

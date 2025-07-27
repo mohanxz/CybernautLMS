@@ -55,6 +55,7 @@ export default function AdminHome() {
             name={course?.courseName}
             startDate={batch?.startDate}
             batch={batch?.batchName}
+            batchId={batch?._id}
             onClick={() => handleCourseClick(batch?._id)}
           />
         );

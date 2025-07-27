@@ -109,11 +109,6 @@ export default function LessonPlan() {
   }
 };
 
-  
-
-
-
-
   const handleSubmit = async () => {
   if (!form.title || !form.day) return alert('Please fill title and day');
   setSubmitting(true);

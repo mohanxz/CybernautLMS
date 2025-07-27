@@ -194,7 +194,7 @@ router.post("/send-reset-code", async (req, res) => {
       delete timeoutStore[email];
     }, 10 * 60 * 1000);
 
-
+    
     await transporter.sendMail({
       to: email,
       subject: "Cybernaut LMS Password Reset",

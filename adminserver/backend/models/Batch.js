@@ -6,7 +6,8 @@ const batchSchema = new mongoose.Schema({
   startDate: { type: Date, required: true },
   admins: [{
     module: { type: String, required: true },
-    admin: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }
+    admin: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    ifCompleted: { type: Boolean, default: false }  // <-- added field
   }]
 }, { timestamps: true });
 

@@ -1,84 +1,120 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { toast } from 'react-toastify';
 
-export default function CertificatePage() {
-  const [students, setStudents] = useState([]);
-  const [selected, setSelected] = useState([]);
-  const [loading, setLoading] = useState(false);  // ✅ New loading state
+
+const EligibleStudentsPage = () => {
+  const [data, setData] = useState([]);
+  const [filteredBatch, setFilteredBatch] = useState('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchEligibleStudents = async () => {
+    const fetchEligibilityData = async () => {
       try {
-        const res = await axios.get("http://localhost:5001/api/certificates/eligible");
-        setStudents(res.data);
+        const res = await axios.get('/api/superadmin/eligible');
+        const result = Array.isArray(res.data) ? res.data : [res.data]; // wrap if single object
+        setData(result);
+        setLoading(false);
       } catch (err) {
-        console.error(err);
-        toast.error("Failed to fetch eligible students");
+        console.error('Error fetching data', err);
+        setLoading(false);
       }
     };
 
-    fetchEligibleStudents();
+    fetchEligibilityData();
   }, []);
 
-  const toggleStudent = (id) => {
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((sid) => sid !== id) : [...prev, id]
-    );
-  };
+  const filteredData = filteredBatch
+    ? data.filter(d => d.batch.id === filteredBatch)
+    : data;
 
-  const handleGenerate = async () => {
-    setLoading(true); // ✅ Start loading
-    try {
-      await axios.post("http://localhost:5001/api/certificates/generate", {
-        students: selected
-      });
-      toast.success("Certificates generated and mailed!");
-      setStudents((prev) => prev.filter(s => !selected.includes(s._id)));
-      setSelected([]);
-    } catch (err) {
-      console.error(err);
-      toast.error("Error generating certificates");
-    } finally {
-      setLoading(false); // ✅ Stop loading
-    }
-  };
+
+  if (loading) return <p className="p-4">Loading...</p>;
+
+  const allBatches = data.map(d => ({
+    id: d.batch.id,
+    name: d.batch.name,
+    course: d.batch.course
+  }));
 
   return (
-    <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
-      <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">
-        Eligible Students for Certificates
-      </h2>
-      <div className="space-y-2">
-        {students.map(student => (
-          <div
-            key={student._id}
-            className="flex items-center gap-4 p-3 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
-          >
-            <input
-              type="checkbox"
-              checked={selected.includes(student._id)}
-              onChange={() => toggleStudent(student._id)}
-              className="accent-blue-600 dark:accent-blue-400"
-              disabled={loading} // ✅ disable during loading
-            />
-            <span className="text-gray-900 dark:text-white">
-              {student.user.name} - {student.user.email}
-            </span>
-          </div>
-        ))}
-      </div>
-      {selected.length > 0 && (
-        <button
-          className={`mt-4 px-6 py-2 rounded text-white ${
-            loading ? 'bg-gray-500 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
-          }`}
-          onClick={handleGenerate}
-          disabled={loading}
+    <div className="p-4">
+      <h2 className="text-2xl font-semibold mb-4">Eligible Students</h2>
+
+      {/* Batch Filter Dropdown */}
+      <div className="mb-6">
+        <label className="mr-2 font-medium">Filter by Batch:</label>
+        <select
+          className="border rounded px-2 py-1"
+          onChange={e => setFilteredBatch(e.target.value)}
+          value={filteredBatch}
         >
-          {loading ? 'Generating...' : 'Generate Certificates'}
-        </button>
+          <option value="">All Batches</option>
+          {allBatches.map(b => (
+            <option key={b.id} value={b.id}>
+              {b.name} ({b.course})
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {filteredData.length === 0 ? (
+        <p>No completed batches found.</p>
+      ) : (
+        filteredData.map(({ batch, eligible }) => (
+          <div key={batch.id} className="mb-8 border rounded p-4 shadow-sm bg-white">
+            <h3 className="text-lg font-bold mb-2">
+              Batch: {batch.name} ({batch.course})
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">Start Date: {new Date(batch.startDate).toDateString()}</p>
+
+            <div className="mb-4">
+              <h4 className="font-semibold text-green-700 mb-2">Eligible Students</h4>
+              {eligible.length === 0 ? (
+                <p className="text-sm text-gray-500">No eligible students.</p>
+              ) : (
+                <table className="w-full text-sm border mb-4">
+                  <thead>
+                    <tr className="bg-green-100">
+                      <th className="border px-2 py-1">Roll No</th>
+                      <th className="border px-2 py-1">Name</th>
+                      <th className="border px-2 py-1">Email</th>
+                      <th className="border px-2 py-1">Phone</th>
+                      <th className="border px-2 py-1">DOB</th>
+                      <th className="border px-2 py-1">Coding</th>
+                      <th className="border px-2 py-1">Quiz</th>
+                      <th className="border px-2 py-1">Assignment</th>
+                      <th className="border px-2 py-1">Theory</th>
+                      <th className="border px-2 py-1">Project</th>
+                      <th className="border px-2 py-1">Final Score</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {eligible
+                      .sort((a, b) => b.marks.finalScore - a.marks.finalScore)
+                      .map(s => (
+                        <tr key={s._id} className="hover:bg-green-50">
+                          <td className="border px-2 py-1">{s.rollNo}</td>
+                          <td className="border px-2 py-1">{s.user.name}</td>
+                          <td className="border px-2 py-1">{s.user.email}</td>
+                          <td className="border px-2 py-1">{s.phone}</td>
+                          <td className="border px-2 py-1">{new Date(s.dob).toLocaleDateString()}</td>
+                          <td className="border px-2 py-1">{s.marks.codingTotal}</td>
+                          <td className="border px-2 py-1">{s.marks.quizTotal}</td>
+                          <td className="border px-2 py-1">{s.marks.assignmentTotal}</td>
+                          <td className="border px-2 py-1">{s.marks.theoryMarks}</td>
+                          <td className="border px-2 py-1">{s.marks.projectMarks}</td>
+                          <td className="border px-2 py-1 font-bold text-green-700">{s.marks.finalScore}</td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        ))
       )}
     </div>
   );
-}
+};
+
+export default EligibleStudentsPage;
