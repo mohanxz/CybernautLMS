@@ -48,6 +48,7 @@ router.get('/batch/by-id/:batchId', async (req, res) => {
       batchName: batch.batchName,
       startDate: batch.startDate,
       courseName: batch.course?.courseName || '',
+      course: batch.course?._id || '',
       admins: batch.admins.map(a => ({
         module: a.module,
         name: a.admin?.name || 'Unknown',

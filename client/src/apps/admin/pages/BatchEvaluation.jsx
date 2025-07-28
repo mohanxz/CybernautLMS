@@ -63,11 +63,11 @@ const BatchEvaluation = () => {
       });
 
       const studentMarksWithUrls = await Promise.all(
-        res.data.studentMarks.map(async (s) => {
-          const answerUrls = await fetchAnswerUrls(s.student);
-          return { ...s, ...answerUrls };
-        })
-      );
+  res.data.studentMarks.map(async (s) => {
+    const answerUrls = await fetchAnswerUrls(s.student, batchDetails.batchName); // ✅ pass batch name
+    return { ...s, ...answerUrls };
+  })
+);
 
       setEvaluation(res.data);
       setFormData({
@@ -85,31 +85,24 @@ const BatchEvaluation = () => {
     }
   }, [batchId, selectedModule, token]);
 
-  const fetchAnswerUrls = async (student) => {
-    try {
-      const res = await axios.get(`${backendBase}/api/s3-answers`, {
-        params: {
-          batchName: batchId,
-          studentName: student.user?.name,
-          rollNo: student.rollNo,
-        },
-      });
+  // ✅ Fix the signature
+const fetchAnswerUrls = async (student, batchName) => {
+  try {
+    const res = await axios.get(`${backendBase}/api/s3-answers/check`, {
+      params: {
+        batchName,
+        studentName: student.user?.name,
+        rollNo: student.rollNo,
+        module: selectedModule
+      },
+    });
 
-      const checkUrl = async (url) => {
-        try {
-          await axios.head(url);
-          return url;
-        } catch {
-          return null;
-        }
-      };
+    return { projectAnswerUrl: res.data.projectAnswerUrl };
+  } catch {
+    return { projectAnswerUrl: null };
+  }
+};
 
-      const projectUrl = await checkUrl(res.data.projectAnswerUrl);
-      return { projectAnswerUrl: projectUrl };
-    } catch {
-      return {};
-    }
-  };
 
   const handleMarksChange = (studentId, field, value) => {
     const updated = formData.studentMarks.map((s) =>

@@ -86,22 +86,23 @@ router.post('/upload-assignment', upload.single('file'), async (req, res) => {
 
 // Upload Project
 router.post('/upload-project', upload.single('file'), async (req, res) => {
-  const { batch, title } = req.query;
-
-  if (!req.file || !batch || !title) {
+  const { batch, module, studentName, rollNo } = req.query;
+    console.log(batch,studentName,rollNo,module);
+  if (!req.file || !batch || !module || !studentName || !rollNo) {
     return res.status(400).json({ error: 'Missing file or required params' });
   }
 
   try {
-    const batchDoc = await Batch.findById(batch);
+    const batchDoc = await Batch.findById(batch).populate("course");
     if (!batchDoc) return res.status(404).json({ error: 'Batch not found' });
 
-    const cleanBatch = sanitizeForFolderName(batchDoc.batchName);
-    const cleanTitle = sanitizeForFolderName(title);
+    const cleanBatch = sanitizeForFolderName(batchDoc.batchName); // e.g. FS-JUL25-B1
+    const cleanModule = sanitizeForFolderName(module);
+    const cleanStudent = sanitizeForFolderName(`${studentName}_${rollNo}`);
 
-    const key = `${cleanBatch}/project/${cleanTitle}.pdf`;
-    const s3Url = await uploadToS3(key, req.file.buffer); // ✅ fixed
-
+    const key = `${cleanBatch}/${cleanModule}/evaluation/project/answers/${cleanStudent}/answer.pdf`;
+    const s3Url = await uploadToS3(key, req.file.buffer);
+    console.log(key);
     res.json({ message: 'Project uploaded successfully', s3path: s3Url });
   } catch (err) {
     console.error('Upload failed:', err);

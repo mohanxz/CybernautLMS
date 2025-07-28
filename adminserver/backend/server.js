@@ -22,6 +22,7 @@ const batchEvaluationRoutes = require('./routes/batchEvaluation.js');
 const s3Urls = require('./routes/s3Urls'); // ✅ Import correct file
 const finalassgnRoutes = require('./routes/finalAssignment.js');
 const courseRoutes = require("./routes/courseRoute");
+const s3AnswerCheckRoute = require('./routes/s3AnswerCheck');
 const app = express();
 const allowedOrigins = [
   'http://localhost:5173'
@@ -69,5 +70,7 @@ app.use('/api/batch-evaluation', batchEvaluationRoutes);
 app.use('/api/final-assignment', finalassgnRoutes);
 
 app.use('/api', s3Urls); // ✅ Mount at /api
+
+app.use('/api/s3-answers', s3AnswerCheckRoute);
 
 app.listen(5002, () => console.log('Admin server on 5002'));

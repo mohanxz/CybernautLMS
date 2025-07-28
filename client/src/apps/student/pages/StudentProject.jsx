@@ -4,45 +4,67 @@ import { FaFileAlt, FaUpload, FaCheckCircle } from "react-icons/fa";
 import { toast } from "react-toastify";
 
 export default function StudentProject() {
-  const [questionUrl, setQuestionUrl] = useState(null);
-  const [submitted, setSubmitted] = useState(false);
-  const [file, setFile] = useState(null);
+  const [modules, setModules] = useState([]);
+  const [submissions, setSubmissions] = useState({});
+  const [files, setFiles] = useState({});
   const [student, setStudent] = useState(null);
   const [batch, setBatch] = useState(null);
+  const [batchName, setBatchName] = useState("");
+  const [courseModules, setCourseModules] = useState([]);
 
   useEffect(() => {
-    const fetchStudent = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const res = await axios.get("http://localhost:5004/auth/student/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setStudent(res.data);
-        setBatch(res.data.batch);
+  const fetchData = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const studentRes = await axios.get("http://localhost:5004/auth/student/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-        const batchRes = await axios.get(`http://localhost:5002/project-theory/${res.data.batch}`);
-        if (batchRes.data?.projectUrl) setQuestionUrl(batchRes.data.projectUrl);
+      const studentData = studentRes.data;
+      setStudent(studentData);
+      setBatch(studentData.batch);
 
-        // HEAD request with error handling
-        const key = `${res.data.user.name.trim()}_${res.data.rollNo}`;
-        try {
-          const headRes = await axios.head(`https://your-bucket.s3.amazonaws.com/${key}/project/answer.pdf`);
-          setSubmitted(headRes.status === 200);
-        } catch {
-          setSubmitted(false);
-        }
-      } catch (error) {
-        console.error("Error fetching student/project data:", error);
-        toast.error("Something went wrong. Try again.");
-      }
-    };
+      const batchRes = await axios.get(`http://localhost:5003/student/batch/by-id/${studentData.batch}`);
+      const course = batchRes.data.course;
+      setBatchName(batchRes.data.batchName);
 
-    fetchStudent();
-  }, []);
+      const courseRes = await axios.get(`http://localhost:5003/api/courses/${course}`);
+      const mods = courseRes.data.modules;
+      setCourseModules(mods);
 
-  const handleSubmit = async () => {
+      // 🔁 Check existence via backend route
+      const res = await axios.post("http://localhost:5003/api/project/check-submissions", {
+        batchName: batchRes.data.batchName,
+        studentName: studentData.user.name,
+        rollNo: studentData.rollNo,
+        modules: mods
+      });
+
+      setModules(
+        res.data.map((m) => ({
+          module: m.module,
+          questionUrl: m.questionUrl,
+          answerSubmitted: m.answerExists,
+        }))
+      );
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to fetch project modules");
+    }
+  };
+
+  fetchData();
+}, []);
+
+
+  const handleFileChange = (module, file) => {
+    setFiles((prev) => ({ ...prev, [module]: file }));
+  };
+
+  const handleSubmit = async (module) => {
+    const file = files[module];
     if (!file || !batch || !student) {
-      toast.error("Missing file or student data");
+      toast.error("Missing file or data");
       return;
     }
 
@@ -51,11 +73,15 @@ export default function StudentProject() {
 
     try {
       await axios.post(
-        `http://localhost:5002/upload-project?batch=${batch}&title=project_${student.user.name}`,
+        `http://localhost:5002/upload-project?batch=${batch}&module=${module}&studentName=${student.user.name}&rollNo=${student.rollNo}`,
         fd
       );
       toast.success("Project submitted!");
-      setSubmitted(true);
+      setModules((prev) =>
+        prev.map((m) =>
+          m.module === module ? { ...m, answerSubmitted: true } : m
+        )
+      );
     } catch (err) {
       console.error(err);
       toast.error("Upload failed");
@@ -64,38 +90,56 @@ export default function StudentProject() {
 
   return (
     <div className="p-6 dark:bg-gray-900 min-h-screen">
-      <h2 className="text-2xl font-bold mb-4 text-black dark:text-white">Project Submission</h2>
+      <h2 className="text-2xl font-bold mb-4 text-black dark:text-white">
+        Project Submission
+      </h2>
 
-      {questionUrl ? (
-        <a href={questionUrl} target="_blank" rel="noreferrer" className="text-blue-600 underline">
-          <FaFileAlt className="inline mr-2" /> View Project Question
-        </a>
-      ) : (
-        <p className="text-gray-500">No Project Posted Yet</p>
-      )}
+      {modules.map((m) => (
+        <div
+          key={m.module}
+          className="border-b border-gray-300 pb-4 mb-4 dark:text-white"
+        >
+          <h3 className="text-xl font-semibold mb-2">{m.module}</h3>
 
-      <div className="mt-6">
-        {submitted ? (
-          <p className="text-green-600 flex items-center gap-2">
-            <FaCheckCircle /> Submitted Successfully
-          </p>
-        ) : (
-          <>
-            <input
-              type="file"
-              accept="application/pdf"
-              onChange={e => setFile(e.target.files[0])}
-              className="mb-3"
-            />
-            <button
-              onClick={handleSubmit}
-              className="bg-blue-600 text-white px-4 py-2 rounded flex items-center gap-2"
+          {m.questionUrl ? (
+            <a
+              href={m.questionUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="text-blue-600 underline"
             >
-              <FaUpload /> Submit Project
-            </button>
-          </>
-        )}
-      </div>
+              <FaFileAlt className="inline mr-2" /> View Question
+            </a>
+          ) : (
+            <p className="text-gray-500">No Question Posted</p>
+          )}
+
+          <div className="mt-3">
+            {m.answerSubmitted ? (
+              <p className="text-green-600 flex items-center gap-2">
+                <FaCheckCircle /> Submitted Successfully
+              </p>
+            ) : (
+              <>
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  onChange={(e) => handleFileChange(m.module, e.target.files[0])}
+                  className="mb-2"
+                  disabled={!m.questionUrl}
+                />
+                <button
+                  onClick={() => handleSubmit(m.module)}
+                  className="bg-blue-600 text-white px-4 py-2 rounded flex items-center gap-2 disabled:opacity-50"
+                  disabled={!m.questionUrl}
+                >
+                  <FaUpload /> Submit Project
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
