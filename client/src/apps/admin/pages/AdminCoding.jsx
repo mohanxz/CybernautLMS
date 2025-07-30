@@ -1,4 +1,3 @@
-// src/pages/AdminCoding.jsx
 import React, { useEffect, useState, useCallback } from "react";
 import { FaPlus, FaEdit, FaTimes, FaTrash, FaEyeSlash, FaEye } from "react-icons/fa";
 import { useParams } from "react-router-dom";
@@ -20,9 +19,7 @@ export default function AdminCoding() {
     title: "",
     description: "",
     language: "Python",
-    testCases: [
-      { input: [""], expectedOutput: "", hidden: false }
-    ],
+    testCases: [{ input: [""], expectedOutput: "", hidden: false }],
   });
   const [editIndex, setEditIndex] = useState(null);
 
@@ -33,7 +30,7 @@ export default function AdminCoding() {
     const payload = JSON.parse(atob(token.split(".")[1]));
     setAdminId(payload.id);
 
-    const adminModules = res.data.admins.filter(a => a.admin === payload.id).map(a => a.module);
+    const adminModules = res.data.admins.filter((a) => a.admin === payload.id).map((a) => a.module);
     setModules(adminModules);
     setSelectedModule(adminModules[0]);
   }, [batchId, token]);
@@ -42,7 +39,7 @@ export default function AdminCoding() {
     if (!selectedModule) return;
     try {
       const res = await API.get(`/notes/${batchId}/${selectedModule}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       setNotes(res.data);
       fetchCodingQuestions(res.data);
@@ -62,29 +59,33 @@ export default function AdminCoding() {
     setCodingMap(map);
   };
 
-  useEffect(() => { fetchModules(); }, [fetchModules]);
-  useEffect(() => { fetchNotes(); }, [fetchNotes]);
+  useEffect(() => {
+    fetchModules();
+  }, [fetchModules]);
 
-const openModal = (noteId) => {
-  setSelectedNote(noteId);
-  const codingQuestions = codingMap[noteId] || [];
+  useEffect(() => {
+    fetchNotes();
+  }, [fetchNotes]);
 
-  if (codingQuestions.length > 0) {
-    setEditIndex(0); // Open first question for editing
-    setNewCoding(codingQuestions[0]);
-  } else {
-    setEditIndex(null); // New question mode
-    setNewCoding({
-      title: "",
-      description: "",
-      language: "Python",
-      testCases: [{ input: [""], expectedOutput: "", hidden: false }],
-    });
-  }
+  const openModal = (noteId) => {
+    setSelectedNote(noteId);
+    const codingQuestions = codingMap[noteId] || [];
 
-  setModalOpen(true);
-};
+    if (codingQuestions.length > 0) {
+      setEditIndex(0); // Open first question for editing
+      setNewCoding(codingQuestions[0]);
+    } else {
+      setEditIndex(null); // New question mode
+      setNewCoding({
+        title: "",
+        description: "",
+        language: "Python",
+        testCases: [{ input: [""], expectedOutput: "", hidden: false }],
+      });
+    }
 
+    setModalOpen(true);
+  };
 
   const closeModal = () => {
     setSelectedNote(null);
@@ -117,9 +118,9 @@ const openModal = (noteId) => {
   };
 
   const addTestCase = () => {
-    setNewCoding(prev => ({
+    setNewCoding((prev) => ({
       ...prev,
-      testCases: [...prev.testCases, { input: [""], expectedOutput: "", hidden: false }]
+      testCases: [...prev.testCases, { input: [""], expectedOutput: "", hidden: false }],
     }));
   };
 
@@ -136,22 +137,23 @@ const openModal = (noteId) => {
   };
 
   const handleAddOrUpdate = async () => {
-    const endpoint = editIndex !== null
-      ? `/api/coding-questions/${codingMap[selectedNote][editIndex]._id}`
-      : `/api/coding-questions`;
+    const endpoint =
+      editIndex !== null
+        ? `/api/coding-questions/${codingMap[selectedNote][editIndex]._id}`
+        : `/api/coding-questions`;
 
     const method = editIndex !== null ? "put" : "post";
 
     const payload = {
       ...newCoding,
       noteId: selectedNote,
-      createdBy: adminId
+      createdBy: adminId,
     };
 
     try {
       await API[method](endpoint, payload);
       const { data } = await API.get(`/api/coding-questions/by-note/${selectedNote}`);
-      setCodingMap(prev => ({ ...prev, [selectedNote]: data }));
+      setCodingMap((prev) => ({ ...prev, [selectedNote]: data }));
       closeModal();
     } catch (err) {
       console.error("Failed to save coding question", err);
@@ -159,17 +161,22 @@ const openModal = (noteId) => {
   };
 
   return (
-    <div className="p-6 mx-auto text-gray-900 dark:bg-black dark:text-white">
-      <h2 className="text-2xl font-bold mb-6">Coding Manager – <span className="text-indigo-600">{selectedModule}</span></h2>
+    <div className="p-4 sm:p-6 mx-auto text-gray-900 dark:bg-black dark:text-white min-h-screen max-w-5xl">
+      <h2 className="text-2xl font-bold mb-6">
+        Coding Manager – <span className="text-indigo-600">{selectedModule}</span>
+      </h2>
 
+      {/* Modules buttons */}
       {modules.length > 1 && (
-        <div className="flex gap-2 mb-4">
-          {modules.map(mod => (
+        <div className="flex flex-wrap gap-2 mb-4">
+          {modules.map((mod) => (
             <button
               key={mod}
               onClick={() => setSelectedModule(mod)}
-              className={`px-4 py-1 rounded-full border text-sm font-medium transition ${
-                selectedModule === mod ? "bg-black text-white border-black" : "bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600"
+              className={`px-4 py-1 rounded-full border text-sm font-medium transition w-full sm:w-auto ${
+                selectedModule === mod
+                  ? "bg-black text-white border-black"
+                  : "bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600"
               }`}
             >
               {mod}
@@ -178,28 +185,35 @@ const openModal = (noteId) => {
         </div>
       )}
 
-      {notes.map(note => (
-        <div key={note._id} className="bg-white text-black dark:bg-gray-800 dark:text-white shadow p-4 rounded-xl mb-6">
-          <div className="flex justify-between items-center mb-2">
-            <h3 className="text-lg font-semibold">Day {note.day}: {note.title}</h3>
+      {/* Notes list */}
+      <div className="space-y-6">
+        {notes.map((note) => (
+          <div
+            key={note._id}
+            className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
+          >
+            <h3 className="text-lg font-semibold flex-1 min-w-0">
+              Day {note.day}: <span className="break-words">{note.title}</span>
+            </h3>
             <button
-  onClick={() => openModal(note._id)}
-  className="bg-black text-white px-4 py-2 rounded flex items-center gap-2 hover:bg-gray-800"
->
-  <FaPlus />
-  {(codingMap[note._id] && codingMap[note._id].length > 0) ? "Manage Coding" : "Add Coding"}
-</button>
+              onClick={() => openModal(note._id)}
+              className="bg-black text-white px-4 py-2 rounded flex items-center gap-2 hover:bg-gray-800 whitespace-nowrap w-full sm:w-auto justify-center"
+            >
+              <FaPlus />
+              {(codingMap[note._id] && codingMap[note._id].length > 0) ? "Manage Coding" : "Add Coding"}
+            </button>
           </div>
+        ))}
+      </div>
 
-        </div>
-      ))}
-
+      {/* Modal */}
       {modalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start pt-20 z-50">
-          <div className="bg-white dark:bg-gray-900 text-black dark:text-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6 relative">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start pt-20 z-50 overflow-y-auto">
+          <div className="bg-white dark:bg-gray-900 text-black dark:text-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6 relative mx-4 sm:mx-0">
             <button
               className="absolute top-4 right-4 text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-xl"
               onClick={closeModal}
+              aria-label="Close modal"
             >
               <FaTimes />
             </button>
@@ -209,21 +223,21 @@ const openModal = (noteId) => {
             <input
               type="text"
               placeholder="Title"
-              className="w-full p-2 border my-1 dark:bg-gray-800 dark:border-gray-600"
+              className="w-full p-2 border my-1 dark:bg-gray-800 dark:border-gray-600 rounded"
               value={newCoding.title}
-              onChange={(e) => setNewCoding(prev => ({ ...prev, title: e.target.value }))}
+              onChange={(e) => setNewCoding((prev) => ({ ...prev, title: e.target.value }))}
             />
             <textarea
               placeholder="Question Description"
-              className="w-full p-2 border my-1 dark:bg-gray-800 dark:border-gray-600"
+              className="w-full p-2 border my-1 dark:bg-gray-800 dark:border-gray-600 rounded resize-vertical min-h-[100px]"
               value={newCoding.description}
-              onChange={(e) => setNewCoding(prev => ({ ...prev, description: e.target.value }))}
+              onChange={(e) => setNewCoding((prev) => ({ ...prev, description: e.target.value }))}
             />
 
             <label className="text-sm mt-3 block font-medium">Test Cases:</label>
             {newCoding.testCases.map((tc, tcIndex) => (
               <div key={tcIndex} className="border rounded p-3 mb-4 dark:border-gray-600 bg-gray-50 dark:bg-gray-800">
-                <div className="flex justify-between items-center mb-1">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-1 gap-2">
                   <span className="font-semibold">Test Case {tcIndex + 1}</span>
                   <div className="flex items-center gap-2">
                     <button onClick={() => toggleHidden(tcIndex)} title="Toggle Hidden" className="text-sm">
@@ -240,7 +254,7 @@ const openModal = (noteId) => {
                     <input
                       type="text"
                       placeholder={`Input ${inpIndex + 1}`}
-                      className="flex-1 p-1 border dark:bg-gray-700 dark:border-gray-600"
+                      className="flex-1 p-1 border rounded dark:bg-gray-700 dark:border-gray-600"
                       value={inp}
                       onChange={(e) => handleTestCaseInputChange(tcIndex, inpIndex, e.target.value)}
                     />
@@ -258,7 +272,7 @@ const openModal = (noteId) => {
                 <input
                   type="text"
                   placeholder="Expected Output"
-                  className="w-full p-1 border dark:bg-gray-700 dark:border-gray-600"
+                  className="w-full p-1 border rounded dark:bg-gray-700 dark:border-gray-600"
                   value={tc.expectedOutput}
                   onChange={(e) => {
                     const updated = [...newCoding.testCases];

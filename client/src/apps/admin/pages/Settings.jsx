@@ -112,8 +112,8 @@ const Settings = () => {
   };
 
   return (
-    <div className="p-4 flex h-[100vh] bg-gray-50 text-black dark:bg-gray-900 dark:text-white">
-      <div className="flex-1 overflow-y-auto">
+    <div className="p-4 flex h-full min-h-screen bg-gray-50 text-black dark:bg-gray-900 dark:text-white">
+      <div className="w-full max-w-5xl mx-auto">
         <h1 className="text-2xl font-bold mb-2">Profile & Settings</h1>
         <p className="text-gray-500 mb-6 dark:text-gray-400">
           Manage your account settings and preferences
@@ -121,15 +121,13 @@ const Settings = () => {
 
         <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
           {/* Header */}
-          <div className="flex items-center p-6 border-b dark:border-gray-600">
+          <div className="flex flex-col sm:flex-row items-center p-6 border-b dark:border-gray-600 gap-4">
             <div className="w-16 h-16 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center text-3xl text-blue-500 font-bold">
               {form.name?.charAt(0)}
             </div>
-            <div className="ml-4">
+            <div className="text-center sm:text-left">
               <h2 className="text-lg font-semibold">{form.name}</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-300">
-                {form.email}
-              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-300">{form.email}</p>
               <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
                 Lecturer
               </span>
@@ -138,71 +136,43 @@ const Settings = () => {
 
           {/* Tabs */}
           <div className="flex border-b dark:border-gray-600">
-            <button
-              className={`flex-1 py-3 text-center font-semibold ${
-                tab === "profile"
-                  ? "bg-gray-100 dark:bg-gray-700 border-b-2 border-blue-600"
-                  : "bg-white dark:bg-gray-800"
-              }`}
-              onClick={() => setTab("profile")}
-            >
-              Profile
-            </button>
-            <button
-              className={`flex-1 py-3 text-center font-semibold ${
-                tab === "password"
-                  ? "bg-gray-100 dark:bg-gray-700 border-b-2 border-blue-600"
-                  : "bg-white dark:bg-gray-800"
-              }`}
-              onClick={() => setTab("password")}
-            >
-              Password
-            </button>
+            {['profile', 'password'].map((key) => (
+              <button
+                key={key}
+                className={`flex-1 py-3 text-center font-semibold transition-colors duration-200 ${
+                  tab === key
+                    ? 'bg-gray-100 dark:bg-gray-700 border-b-2 border-blue-600'
+                    : 'bg-white dark:bg-gray-800'
+                }`}
+                onClick={() => setTab(key)}
+              >
+                {key === 'profile' ? 'Profile' : 'Password'}
+              </button>
+            ))}
           </div>
 
           {/* Profile Tab */}
           {tab === "profile" && (
             <div className="p-6 space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Full Name</label>
-                  <input
-                    name="name"
-                    value={form.name}
-                    onChange={handleChange}
-                    className="w-full mt-1 border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Email Address</label>
-                  <input
-                    disabled
-                    name="email"
-                    value={form.email}
-                    className="w-full mt-1 border rounded px-3 py-2 bg-gray-100 cursor-not-allowed dark:bg-gray-600"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Phone Number</label>
-                  <input
-                    name="phone"
-                    value={form.phone}
-                    onChange={handleChange}
-                    className="w-full mt-1 border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Department</label>
-                  <input
-                    name="department"
-                    value={form.department}
-                    onChange={handleChange}
-                    className="w-full mt-1 border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600"
-                  />
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {['name', 'email', 'phone', 'department'].map((field) => (
+                  <div key={field}>
+                    <label className="text-sm font-medium capitalize">
+                      {field.replace(/([A-Z])/g, ' $1')}
+                    </label>
+                    <input
+                      name={field}
+                      value={form[field]}
+                      onChange={handleChange}
+                      disabled={field === 'email'}
+                      className={`w-full mt-1 border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600 ${
+                        field === 'email' ? 'bg-gray-100 cursor-not-allowed dark:bg-gray-600' : ''
+                      }`}
+                    />
+                  </div>
+                ))}
               </div>
 
-              {/* Skills */}
               <div>
                 <label className="text-sm font-medium">Skills</label>
                 <div className="flex flex-wrap mt-2 gap-2">
@@ -215,8 +185,7 @@ const Settings = () => {
                     </span>
                   ))}
                 </div>
-
-                <div className="flex mt-4 gap-2">
+                <div className="flex flex-col sm:flex-row mt-4 gap-2">
                   <input
                     type="text"
                     className="border rounded px-3 py-2 flex-1 dark:bg-gray-700 dark:border-gray-600"
@@ -250,34 +219,32 @@ const Settings = () => {
                 Update your password to keep your account secure
               </p>
 
-              {["currentPassword", "newPassword", "confirmPassword"].map(
-                (field) => (
-                  <div key={field}>
-                    <label className="block text-sm font-medium">
-                      {field === "currentPassword"
-                        ? "Current Password"
-                        : field === "newPassword"
-                        ? "New Password"
-                        : "Confirm New Password"}
-                    </label>
-                    <div className="relative mt-1">
-                      <input
-                        type={showPassword[field] ? "text" : "password"}
-                        name={field}
-                        value={passwordForm[field]}
-                        onChange={handlePasswordChange}
-                        className="w-full border px-3 py-2 rounded dark:bg-gray-700 dark:border-gray-600"
-                      />
-                      <span
-                        onClick={() => toggleVisibility(field)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-gray-500"
-                      >
-                        👁
-                      </span>
-                    </div>
+              {Object.keys(passwordForm).map((field) => (
+                <div key={field}>
+                  <label className="block text-sm font-medium">
+                    {field === "currentPassword"
+                      ? "Current Password"
+                      : field === "newPassword"
+                      ? "New Password"
+                      : "Confirm New Password"}
+                  </label>
+                  <div className="relative mt-1">
+                    <input
+                      type={showPassword[field] ? "text" : "password"}
+                      name={field}
+                      value={passwordForm[field]}
+                      onChange={handlePasswordChange}
+                      className="w-full border px-3 py-2 rounded dark:bg-gray-700 dark:border-gray-600"
+                    />
+                    <span
+                      onClick={() => toggleVisibility(field)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-gray-500"
+                    >
+                      👁
+                    </span>
                   </div>
-                )
-              )}
+                </div>
+              ))}
 
               <button
                 onClick={submitPasswordChange}
