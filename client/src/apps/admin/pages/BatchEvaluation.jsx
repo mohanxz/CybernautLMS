@@ -22,7 +22,7 @@ const BatchEvaluation = () => {
   const [editMode, setEditMode] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // ✅ Load modules that this admin is handling
+  // Load modules that this admin is handling
   const fetchBatchModules = useCallback(async () => {
     if (!token) return navigate("/login");
 
@@ -52,7 +52,7 @@ const BatchEvaluation = () => {
     }
   }, [batchId, navigate, token]);
 
-  // ✅ Fetch evaluation per selected module
+  // Fetch evaluation per selected module
   const fetchEvaluation = useCallback(async () => {
     if (!selectedModule) return;
 
@@ -63,11 +63,11 @@ const BatchEvaluation = () => {
       });
 
       const studentMarksWithUrls = await Promise.all(
-  res.data.studentMarks.map(async (s) => {
-    const answerUrls = await fetchAnswerUrls(s.student, batchDetails.batchName); // ✅ pass batch name
-    return { ...s, ...answerUrls };
-  })
-);
+        res.data.studentMarks.map(async (s) => {
+          const answerUrls = await fetchAnswerUrls(s.student, batchDetails.batchName);
+          return { ...s, ...answerUrls };
+        })
+      );
 
       setEvaluation(res.data);
       setFormData({
@@ -83,26 +83,24 @@ const BatchEvaluation = () => {
     } finally {
       setLoading(false);
     }
-  }, [batchId, selectedModule, token]);
+  }, [batchId, selectedModule, token, batchDetails.batchName]);
 
-  // ✅ Fix the signature
-const fetchAnswerUrls = async (student, batchName) => {
-  try {
-    const res = await axios.get(`${backendBase}/api/s3-answers/check`, {
-      params: {
-        batchName,
-        studentName: student.user?.name,
-        rollNo: student.rollNo,
-        module: selectedModule
-      },
-    });
+  const fetchAnswerUrls = async (student, batchName) => {
+    try {
+      const res = await axios.get(`${backendBase}/api/s3-answers/check`, {
+        params: {
+          batchName,
+          studentName: student.user?.name,
+          rollNo: student.rollNo,
+          module: selectedModule,
+        },
+      });
 
-    return { projectAnswerUrl: res.data.projectAnswerUrl };
-  } catch {
-    return { projectAnswerUrl: null };
-  }
-};
-
+      return { projectAnswerUrl: res.data.projectAnswerUrl };
+    } catch {
+      return { projectAnswerUrl: null };
+    }
+  };
 
   const handleMarksChange = (studentId, field, value) => {
     const updated = formData.studentMarks.map((s) =>
@@ -157,21 +155,25 @@ const fetchAnswerUrls = async (student, batchName) => {
   };
 
   const createEvaluation = async () => {
-  try {
-    await axios.post(`${backendBase}/api/batch-evaluation`, {
-      batch: batchId,
-      module: selectedModule,
-      projectS3Url: ""
-    }, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    try {
+      await axios.post(
+        `${backendBase}/api/batch-evaluation`,
+        {
+          batch: batchId,
+          module: selectedModule,
+          projectS3Url: "",
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
-    // ✅ Refetch data immediately
-    await fetchEvaluation();
-  } catch (err) {
-    console.error("Evaluation creation failed:", err);
-  }
-};
+      // Refetch data immediately
+      await fetchEvaluation();
+    } catch (err) {
+      console.error("Evaluation creation failed:", err);
+    }
+  };
 
   useEffect(() => {
     fetchBatchModules();
@@ -184,23 +186,21 @@ const fetchAnswerUrls = async (student, batchName) => {
   }, [fetchEvaluation]);
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6 max-w-5xl mx-auto">
       <div className="mb-4">
-        <h1 className="text-xl font-bold">
+        <h1 className="text-xl font-bold truncate">
           {batchDetails.courseName} - {batchDetails.batchName}
         </h1>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-4 mb-6 border-b pb-2">
+      <div className="flex overflow-x-auto gap-2 mb-6 border-b pb-2 whitespace-nowrap">
         {modules.map((module) => (
           <button
             key={module}
             onClick={() => setSelectedModule(module)}
-            className={`px-4 py-2 rounded-md font-semibold ${
-              selectedModule === module
-                ? "bg-black text-white"
-                : "bg-gray-200 text-black"
+            className={`px-4 py-2 rounded-md font-semibold flex-shrink-0 ${
+              selectedModule === module ? "bg-black text-white" : "bg-gray-200 text-black"
             }`}
           >
             {module}
@@ -211,19 +211,31 @@ const fetchAnswerUrls = async (student, batchName) => {
       {loading ? (
         <p className="text-gray-500">Loading...</p>
       ) : (
-        <div className="p-4 border rounded-xl shadow bg-white">
-          <div className="flex justify-between items-center mb-2">
-            <h2 className="text-xl font-semibold">Evaluation - {selectedModule}</h2>
+        <div className="p-4 border rounded-xl shadow bg-white overflow-x-auto">
+          <div className="flex justify-between items-center mb-2 flex-col sm:flex-row sm:gap-4">
+            <h2 className="text-xl font-semibold truncate w-full sm:w-auto mb-2 sm:mb-0">
+              Evaluation - {selectedModule}
+            </h2>
 
             {!evaluation && (
-              <button onClick={createEvaluation} className="text-green-600 hover:text-green-800" title="Add">
+              <button
+                onClick={createEvaluation}
+                className="text-green-600 hover:text-green-800 flex items-center gap-1"
+                title="Add"
+              >
                 <FaPlus size={20} />
+                <span className="hidden sm:inline">Add Evaluation</span>
               </button>
             )}
 
             {evaluation && !editMode && (
-              <button onClick={() => setEditMode(true)} className="text-blue-600 hover:text-blue-800" title="Edit">
+              <button
+                onClick={() => setEditMode(true)}
+                className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                title="Edit"
+              >
                 <FaEdit size={18} />
+                <span className="hidden sm:inline">Edit Evaluation</span>
               </button>
             )}
           </div>
@@ -235,12 +247,12 @@ const fetchAnswerUrls = async (student, batchName) => {
                   <input
                     type="file"
                     accept=".pdf"
-                    className="mb-2"
+                    className="mb-2 block w-full sm:w-auto"
                     onChange={(e) => setProjectFile(e.target.files[0])}
                   />
                   <button
                     onClick={uploadFile}
-                    className="mb-2 px-2 py-1 bg-blue-600 text-white rounded flex items-center gap-2"
+                    className="mb-2 px-2 py-1 bg-blue-600 text-white rounded flex items-center gap-2 w-full sm:w-auto justify-center"
                   >
                     <FaUpload /> Upload Project PDF
                   </button>
@@ -252,63 +264,67 @@ const fetchAnswerUrls = async (student, batchName) => {
                   href={formData.projectS3Url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-600 underline block mb-2"
+                  className="text-blue-600 underline block mb-2 truncate"
                 >
                   View Uploaded Project
                 </a>
               )}
 
-              <table className="w-full text-sm">
-                <thead>
-                  <tr>
-                    <th>Roll</th>
-                    <th>Name</th>
-                    <th>Marks</th>
-                    <th>Answer</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {formData.studentMarks.map((s) => (
-                    <tr key={s.student._id} className="border-t">
-                      <td>{s.student.rollNo}</td>
-                      <td>{s.student.user?.name}</td>
-                      <td>
-                        {editMode ? (
-                          <input
-                            type="number"
-                            className="w-16 border p-1 rounded"
-                            value={s.projectMarks}
-                            onChange={(e) =>
-                              handleMarksChange(s.student._id, "projectMarks", e.target.value)
-                            }
-                          />
-                        ) : (
-                          s.projectMarks
-                        )}
-                      </td>
-                      <td>
-                        {s.projectAnswerUrl ? (
-                          <a
-                            href={s.projectAnswerUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-blue-600 underline"
-                          >
-                            View
-                          </a>
-                        ) : (
-                          <span className="text-gray-500">N/A</span>
-                        )}
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[500px] text-sm border-collapse border border-gray-300">
+                  <thead>
+                    <tr>
+                      <th className="border border-gray-300 px-2 py-1 text-left">Roll</th>
+                      <th className="border border-gray-300 px-2 py-1 text-left">Name</th>
+                      <th className="border border-gray-300 px-2 py-1 text-left">Marks</th>
+                      <th className="border border-gray-300 px-2 py-1 text-left">Answer</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {formData.studentMarks.map((s) => (
+                      <tr key={s.student._id} className="border-t border-gray-300">
+                        <td className="px-2 py-1">{s.student.rollNo}</td>
+                        <td className="px-2 py-1 truncate max-w-[150px]" title={s.student.user?.name}>
+                          {s.student.user?.name}
+                        </td>
+                        <td className="px-2 py-1">
+                          {editMode ? (
+                            <input
+                              type="number"
+                              className="w-16 border p-1 rounded"
+                              value={s.projectMarks}
+                              onChange={(e) =>
+                                handleMarksChange(s.student._id, "projectMarks", e.target.value)
+                              }
+                            />
+                          ) : (
+                            s.projectMarks
+                          )}
+                        </td>
+                        <td className="px-2 py-1">
+                          {s.projectAnswerUrl ? (
+                            <a
+                              href={s.projectAnswerUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-blue-600 underline"
+                            >
+                              View
+                            </a>
+                          ) : (
+                            <span className="text-gray-500">N/A</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
               {editMode && (
                 <button
                   onClick={saveEvaluation}
-                  className="mt-4 px-4 py-2 bg-green-600 text-white rounded"
+                  className="mt-4 px-4 py-2 bg-green-600 text-white rounded w-full sm:w-auto block ml-auto"
                 >
                   Save Evaluation
                 </button>

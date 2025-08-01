@@ -24,7 +24,6 @@ export default function AdminHome() {
     try {
       const token = localStorage.getItem("token");
       const res = await API.get("/api/admin-batches/my-batches");
-      console.log(res.data);
       setBatches(res.data);
     } catch (err) {
       console.error("Error fetching batches", err);
@@ -32,39 +31,37 @@ export default function AdminHome() {
   };
 
   const handleCourseClick = (batchId) => {
-  navigate(`/admin/batch/${batchId}/lesson-plan`);
-};
-
+    navigate(`/admin/batch/${batchId}/lesson-plan`);
+  };
 
   return (
-        <div className="max-w-[90%] mx-auto pt-6 min-h-[80vh] dark:text-white">
-  <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-    Your Teaching Batches
-  </h1>
+    <div className="w-full max-w-[95%] sm:max-w-[90%] mx-auto pt-6 min-h-[80vh] dark:text-white">
+      <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white mb-4">
+        Your Teaching Batches
+      </h1>
 
-  {batches.length === 0 ? (
-    <p className="text-gray-500 text-lg">No courses assigned to you yet.</p>
-  ) : (
-    <div className="flex flex-wrap gap-6 overflow-y-auto max-h-[70vh] pr-2 py-10">
-      {batches.map((batch, idx) => {
-        const course = batch.course;
-        return (
-          <CourseCard 
-            key={idx}
-            image={courseImages[batch.course.image]}
-            name={course?.courseName}
-            startDate={batch?.startDate}
-            batch={batch?.batchName}
-            batchId={batch?._id}
-            onClick={() => handleCourseClick(batch?._id)}
-          />
-        );
-      })}
+      {batches.length === 0 ? (
+        <p className="text-gray-500 text-base sm:text-lg">
+          No courses assigned to you yet.
+        </p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 max-h-[70vh] overflow-y-auto py-4 pr-2">
+          {batches.map((batch, idx) => {
+            const course = batch.course;
+            return (
+              <CourseCard 
+                key={idx}
+                image={courseImages[batch.course.image]}
+                name={course?.courseName}
+                startDate={batch?.startDate}
+                batch={batch?.batchName}
+                batchId={batch?._id}
+                onClick={() => handleCourseClick(batch?._id)}
+              />
+            );
+          })}
+        </div>
+      )}
     </div>
-  )}
-</div>
-
-
-
   );
 }

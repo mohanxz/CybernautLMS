@@ -6,7 +6,6 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import EvaluateCodeModal from '../components/EvaluateCodeModal';
 
-
 export default function LessonPlan() {
   const { batchId } = useParams();
   const navigate = useNavigate();
@@ -25,9 +24,6 @@ export default function LessonPlan() {
   const [batchDetails, setBatchDetails] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [submittingStudentId, setSubmittingStudentId] = useState(null);
-  
-
-
 
   const backendBase = 'http://localhost:5002';
   const token = localStorage.getItem('token');
@@ -94,248 +90,245 @@ export default function LessonPlan() {
       console.error("Failed to load submissions", err);
     }
   };
-  
+
   const openCodeEvalModal = async (noteId) => {
-  try {
-    const res = await axios.get(`http://localhost:5002/api/codeEval/${noteId}`);
-    setCodeEvalData({
-      noteId: noteId,
-      submissions: res.data, // studentId -> user.name, rollNo, code
-    });
-    setShowCodeEvalModal(true);
-  } catch (err) {
-    console.error("Failed to load code submissions", err);
-    toast.error("Unable to fetch code submissions.");
-  }
-};
+    try {
+      const res = await axios.get(`http://localhost:5002/api/codeEval/${noteId}`);
+      setCodeEvalData({
+        noteId: noteId,
+        submissions: res.data,
+      });
+      setShowCodeEvalModal(true);
+    } catch (err) {
+      console.error("Failed to load code submissions", err);
+      toast.error("Unable to fetch code submissions.");
+    }
+  };
 
   const handleSubmit = async () => {
-  if (!form.title || !form.day) return alert('Please fill title and day');
-  setSubmitting(true);
-  try {
-    let assignmentS3Url = '';
+    if (!form.title || !form.day) return alert('Please fill title and day');
+    setSubmitting(true);
+    try {
+      let assignmentS3Url = '';
 
-    if (pdfFile) {
-      const fd = new FormData();
-      fd.append('file', pdfFile);
+      if (pdfFile) {
+        const fd = new FormData();
+        fd.append('file', pdfFile);
 
-      const uploadRes = await axios.post(
-        `${backendBase}/upload-assignment?batch=${batchId}&module=${selectedModule}&title=${form.title}`,
-        fd,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        const uploadRes = await axios.post(
+          `${backendBase}/upload-assignment?batch=${batchId}&module=${selectedModule}&title=${form.title}`,
+          fd,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        assignmentS3Url = uploadRes.data.s3path;
+      }
+
+      const payload = {
+        ...form,
+        batch: batchId,
+        module: selectedModule,
+        admin: adminId,
+        assignmentS3Url,
+      };
+
+      if (editingNoteId) {
+        await axios.put(`${backendBase}/notes/${editingNoteId}`, payload, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } else {
+        await axios.post(`${backendBase}/notes`, payload, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
+
+      toast.success("Note saved successfully");
+      setShowModal(false);
+      fetchNotes();
+    } catch (e) {
+      console.error(e);
+      toast.error(
+        e.response?.data?.error?.includes("already exists")
+          ? `Day ${form.day} already exists for this batch`
+          : e.response?.data?.error || 'Error saving note'
       );
-
-      assignmentS3Url = uploadRes.data.s3path;
+    } finally {
+      setSubmitting(false);
     }
-
-    const payload = {
-      ...form,
-      batch: batchId,
-      module: selectedModule,
-      admin: adminId,
-      assignmentS3Url,
-    };
-
-    if (editingNoteId) {
-      await axios.put(`${backendBase}/notes/${editingNoteId}`, payload, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-    } else {
-      await axios.post(`${backendBase}/notes`, payload, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-    }
-
-    toast.success("Note saved successfully");
-    setShowModal(false);
-    fetchNotes();
-  } catch (e) {
-    console.error(e);
-    toast.error(
-      e.response?.data?.error?.includes("already exists")
-        ? `Day ${form.day} already exists for this batch`
-        : e.response?.data?.error || 'Error saving note'
-    );
-  } finally {
-    setSubmitting(false);
-  }
-};
-
+  };
 
   const handleEvaluate = async (studentId, marks, setMarks) => {
-  const mark = parseInt(marks[studentId]);
-  if (isNaN(mark) || mark < 0 || mark > 10) {
-    toast.error("Please enter a valid mark between 0 and 10");
-    return;
-  }
+    const mark = parseInt(marks[studentId]);
+    if (isNaN(mark) || mark < 0 || mark > 10) {
+      toast.error("Please enter a valid mark between 0 and 10");
+      return;
+    }
 
-  setSubmittingStudentId(studentId);
-  try {
-    await axios.post(`${backendBase}/evaluate`, {
-      studentId,
-      module: selectedModule,
-      day: evalData.day,
-      mark
-    });
-    const res = await axios.get(`${backendBase}/evaluate/${batchId}/${selectedModule}/${evalData.title}/${evalData.day}`);
-    setEvalData(prev => ({ ...prev, submissions: res.data }));
-  } catch (err) {
-    console.error("Error submitting marks", err);
-    toast.error("Failed to evaluate submission");
-  } finally {
-    setSubmittingStudentId(null);
-  }
-};
-
-
-
+    setSubmittingStudentId(studentId);
+    try {
+      await axios.post(`${backendBase}/evaluate`, {
+        studentId,
+        module: selectedModule,
+        day: evalData.day,
+        mark
+      });
+      const res = await axios.get(`http://localhost:5002/evaluate/${batchId}/${selectedModule}/${evalData.title}/${evalData.day}`);
+      setEvalData(prev => ({ ...prev, submissions: res.data }));
+    } catch (err) {
+      console.error("Error submitting marks", err);
+      toast.error("Failed to evaluate submission");
+    } finally {
+      setSubmittingStudentId(null);
+    }
+  };
 
   return (
-    <div className=" mx-auto p-6 text-gray-900 dark:text-white bg-white dark:bg-black w-full min-h-screen">
+    <div className="mx-auto p-3 sm:p-6 text-gray-900 dark:text-white bg-white dark:bg-black w-full min-h-screen">
+      
       {/* Module switch buttons */}
-{modules.length > 1 && (
-  <div className="flex gap-3 mb-6">
-    {modules.map(mod => (
-      <button
-        key={mod}
-        onClick={() => setSelectedModule(mod)}
-        className={`px-4 py-1 rounded-full border text-sm font-medium transition-all ${
-          selectedModule === mod ? 'bg-black text-white border-black' : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100'
-        }`}
-      >
-        {mod}
-      </button>
-    ))}
-  </div>
-)}
-
-{/* Page heading and Add Note button */}
-<div className="flex justify-between items-center mb-10">
-  <h2 className="text-2xl font-bold text-gray-900 dark: text-white">
-    Lesson Plan: <span className="text-blue-600">{batchDetails.batchName}</span> <span className="text-gray-500 text-base">({batchDetails.courseName})</span> – <span className="text-indigo-600">{selectedModule}</span>
-  </h2>
-  <button
-    onClick={openModalForAdd}
-    className="flex items-center gap-2 px-5 py-2 text-white bg-black rounded-lg hover:bg-gray-800 transition"
-  >
-    <FaPlus /> Add Note
-  </button>
-</div>
-
-{/* Latest note display */}
-{notes.length > 0 && (
-  <div className="bg-white shadow-sm border rounded-xl p-6 mb-8 dark:bg-blue-200">
-    <div className="flex justify-between items-center">
-      <h3 className="text-lg font-semibold text-gray-800">Day {notes[0].day}: {notes[0].title}</h3>
-      <a
-        href={notes[0].meetlink}
-        target="_blank"
-        rel="noreferrer"
-        className="text-sm px-4 py-2 bg-black text-white rounded hover:bg-gray-800"
-      >
-        Join Meet
-      </a>
-    </div>
-
-    <div className="text-sm mt-4 grid grid-cols-1 md:grid-cols-3 gap-20">
-      {notes[0].assignmentlink && (
-        <a href={notes[0].assignmentlink} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-3 py-2 bg-black text-white rounded hover:bg-gray-800">
-          <FaLink className="text-sm" /> Assignment
-        </a>
-      )}
-      {notes[0].assignmentS3Url && (
-        <a href={notes[0].assignmentS3Url} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-3 py-2 bg-black text-white rounded hover:bg-gray-800">
-          <FaFilePdf className="text-sm" />Assignment PDF
-        </a>
-      )}
-    </div>
-
-    <div className="flex gap-4 mt-6">
-      <button
-        onClick={() => openEvalModal(notes[0])}
-        className="flex items-center justify-center gap-2 w-32 px-3 py-2 bg-black text-white rounded hover:bg-gray-800 text-sm"
-      >
-        <FaFlask className="text-sm" /> Evaluate Assignment
-      </button>
-
-      <button onClick={() => openCodeEvalModal(notes[0]._id)}>
-  Evaluate Code
-</button>
-      <button
-        onClick={() => openModalForEdit(notes[0])}
-        className="flex items-center justify-center gap-2 w-32 px-3 py-2 bg-black text-white rounded hover:bg-gray-800 text-sm"
-      >
-        <FaEdit className="text-sm" /> Edit
-      </button>
-      
-    </div>
-
-    
-
-  </div>
-)}
-
-{/* Older notes display */}
-<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-  {notes.slice(1).map(note => (
-    <div
-      key={note._id}
-      className="bg-white p-5 rounded-lg border hover:shadow-sm cursor-pointer dark:bg-blue-200 text-black"
-      onClick={() => setNotes(prev => {
-        const updated = [...prev];
-        const idx = updated.findIndex(n => n._id === note._id);
-        if (idx > -1) {
-          const [moved] = updated.splice(idx, 1);
-          updated.unshift(moved);
-        }
-        return updated;
-      })}
-    >
-      <div className="flex justify-between items-center">
-        <div>
-          <p className="font-semibold text-gray-800">Day {note.day}: {note.title}</p>
-          <p className="text-xs text-gray-600">{new Date(note.createdAt).toLocaleDateString()}</p>
+      {modules.length > 1 && (
+        <div className="flex flex-wrap gap-2 sm:gap-3 mb-6">
+          {modules.map(mod => (
+            <button
+              key={mod}
+              onClick={() => setSelectedModule(mod)}
+              className={`px-3 sm:px-4 py-1 rounded-full border text-sm font-medium transition-all w-full sm:w-auto ${
+                selectedModule === mod
+                  ? 'bg-blue-500 text-white border-blue-500'
+                  : 'bg-white text-gray-800 border-gray-300 hover:bg-blue-100'
+              }`}
+            >
+              {mod}
+            </button>
+          ))}
         </div>
-        <div className="flex flex-col gap-2 items-end">
-          <button
-            onClick={e => { e.stopPropagation(); openModalForEdit(note); }}
-            className="flex items-center justify-center gap-2 w-32 px-3 py-2 bg-black text-white rounded hover:bg-gray-800 text-sm"
-          >
-            <FaEdit className="text-sm" /> Edit
-          </button>
-          <button
-            onClick={e => { e.stopPropagation(); openEvalModal(note); }}
-            className="flex items-center justify-center gap-2 w-32 px-3 py-2 bg-black text-white rounded hover:bg-gray-800 text-sm"
-          >
-            <FaFlask className="text-sm" /> Evaluate Assignment
-          </button>
+      )}
 
-          <button onClick={() => openCodeEvalModal(note._id)}>
-  Evaluate Code
-</button>
-
-
-        </div>
+      {/* Page heading and Add Note button */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white break-words">
+          Lesson Plan: <span className="text-blue-600">{batchDetails.batchName}</span>{' '}
+          <span className="text-gray-500 text-base">({batchDetails.courseName})</span>
+          {' '}– <span className="text-indigo-600">{selectedModule}</span>
+        </h2>
+        <button
+          onClick={openModalForAdd}
+          className="flex items-center gap-2 px-4 sm:px-5 py-2 w-full sm:w-auto text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition"
+        >
+          <FaPlus /> Add Note
+        </button>
       </div>
-    </div>
-  ))}
-</div>
 
-      
+      {/* Latest note display */}
+      {notes.length > 0 && (
+        <div className="bg-white shadow-sm border rounded-xl p-4 sm:p-6 mb-4 sm:mb-8 dark:bg-blue-200">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-800">
+              Day {notes[0].day}: {notes[0].title}
+            </h3>
+            <a
+              href={notes[0].meetlink}
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs sm:text-sm px-3 sm:px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 w-full sm:w-auto text-center"
+            >
+              Join Meet
+            </a>
+          </div>
+          <div className="text-xs sm:text-sm mt-3 sm:mt-4 flex flex-wrap gap-2">
+            {notes[0].assignmentlink && (
+              <a href={notes[0].assignmentlink} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-2 sm:px-3 py-1 sm:py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                <FaLink className="text-xs sm:text-sm" /> Assignment
+              </a>
+            )}
+            {notes[0].assignmentS3Url && (
+              <a href={notes[0].assignmentS3Url} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-2 sm:px-3 py-1 sm:py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                <FaFilePdf className="text-xs sm:text-sm" />Assignment PDF
+              </a>
+            )}
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mt-4 sm:mt-6">
+            <button
+              onClick={() => openEvalModal(notes[0])}
+              className="flex items-center justify-center gap-2 w-full sm:w-32 px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs sm:text-sm"
+            >
+              <FaFlask className="text-sm" /> Evaluate Assignment
+            </button>
+            <button
+              onClick={() => openCodeEvalModal(notes[0]._id)}
+              className="flex items-center justify-center gap-2 w-full sm:w-32 px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs sm:text-sm"
+            >
+              Evaluate Code
+            </button>
+            <button
+              onClick={() => openModalForEdit(notes[0])}
+              className="flex items-center justify-center gap-2 w-full sm:w-32 px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs sm:text-sm"
+            >
+              <FaEdit className="text-sm" /> Edit
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Older notes display */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+        {notes.slice(1).map(note => (
+          <div
+            key={note._id}
+            className="bg-white p-4 sm:p-5 rounded-lg border hover:shadow-sm cursor-pointer dark:bg-blue-200 text-black"
+            onClick={() => setNotes(prev => {
+              const updated = [...prev];
+              const idx = updated.findIndex(n => n._id === note._id);
+              if (idx > -1) {
+                const [moved] = updated.splice(idx, 1);
+                updated.unshift(moved);
+              }
+              return updated;
+            })}
+          >
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+              <div>
+                <p className="font-semibold text-gray-800">Day {note.day}: {note.title}</p>
+                <p className="text-xs text-gray-600">{new Date(note.createdAt).toLocaleDateString()}</p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2 items-end">
+                <button
+                  onClick={e => { e.stopPropagation(); openModalForEdit(note); }}
+                  className="flex items-center justify-center gap-2 w-full sm:w-32 px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs sm:text-sm"
+                >
+                  <FaEdit className="text-sm" /> Edit
+                </button>
+                <button
+                  onClick={e => { e.stopPropagation(); openEvalModal(note); }}
+                  className="flex items-center justify-center gap-2 w-full sm:w-32 px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs sm:text-sm"
+                >
+                  <FaFlask className="text-sm" /> Evaluate Assignment
+                </button>
+                <button
+                  onClick={e => { e.stopPropagation(); openCodeEvalModal(note._id); }}
+                  className="flex items-center justify-center gap-2 w-full sm:w-32 px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs sm:text-sm"
+                >
+                  Evaluate Code
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
       {/* Evaluation Modal */}
       {showEvalModal && evalData && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-start pt-20 z-50 dark:bg-blue text-white">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl p-8 relative dark:bg-black">
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-start pt-10 sm:pt-20 z-50 dark:bg-black text-black">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md sm:max-w-4xl p-4 sm:p-8 relative">
             <button
               className="absolute top-4 right-4 text-gray-600 hover:text-black text-xl"
               onClick={() => setShowEvalModal(false)}
             >✕</button>
-            <h2 className="text-2xl font-bold mb-6 text-blue-800">
+            <h2 className="text-lg sm:text-2xl font-bold mb-4 sm:mb-6 text-blue-800">
               Pending Assignment Evaluation – {decodeURIComponent(evalData.title)}
             </h2>
             {evalData.submissions.length === 0 ? (
@@ -350,46 +343,40 @@ export default function LessonPlan() {
           </div>
         </div>
       )}
-
       {showCodeEvalModal && codeEvalData && (
-  <EvaluateCodeModal
-    data={codeEvalData}
-    module={selectedModule}
-    onClose={() => setShowCodeEvalModal(false)}
-  />
-)}
-
-
-
+        <EvaluateCodeModal
+          data={codeEvalData}
+          module={selectedModule}
+          onClose={() => setShowCodeEvalModal(false)}
+        />
+      )}
 
       {/* Add/Edit Note Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-start pt-20 z-50 dark:bg-black text-black">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl p-8 relative">
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-start pt-10 sm:pt-20 z-50 dark:bg-black text-black">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md sm:max-w-2xl p-4 sm:p-8 relative">
             <button
               className="absolute top-4 right-4 text-gray-600 hover:text-black text-xl"
               onClick={() => setShowModal(false)}
             >✕</button>
-            <h3 className="text-2xl font-bold mb-6 text-gray-900">{editingNoteId ? 'Edit' : 'Add'} Note – {selectedModule}</h3>
-
-            <div className="space-y-4">
-              <input className="w-full border p-3 rounded-lg" placeholder="Title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />
-              <input className="w-full border p-3 rounded-lg" placeholder="Meet Link" value={form.meetlink} onChange={e => setForm({ ...form, meetlink: e.target.value })} />
-              <input className="w-full border p-3 rounded-lg" placeholder="External Assignment Link" value={form.assignmentlink} onChange={e => setForm({ ...form, assignmentlink: e.target.value })} />
-              <input type="number" className="w-full border p-3 rounded-lg" placeholder="Day" value={form.day} onChange={e => setForm({ ...form, day: e.target.value })} />
-              <input type="file" accept="application/pdf" className="w-full border p-2 rounded-lg bg-gray-100" onChange={e => setPdfFile(e.target.files[0])} />
+            <h3 className="text-lg sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-900">{editingNoteId ? 'Edit' : 'Add'} Note – {selectedModule}</h3>
+            <div className="space-y-3 sm:space-y-4">
+              <input className="w-full border p-2 sm:p-3 rounded-lg" placeholder="Title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />
+              <input className="w-full border p-2 sm:p-3 rounded-lg" placeholder="Meet Link" value={form.meetlink} onChange={e => setForm({ ...form, meetlink: e.target.value })} />
+              <input className="w-full border p-2 sm:p-3 rounded-lg" placeholder="External Assignment Link" value={form.assignmentlink} onChange={e => setForm({ ...form, assignmentlink: e.target.value })} />
+              <input type="number" className="w-full border p-2 sm:p-3 rounded-lg" placeholder="Day" value={form.day} onChange={e => setForm({ ...form, day: e.target.value })} />
+              <input type="file" accept="application/pdf" className="w-full border p-1 sm:p-2 rounded-lg bg-gray-100" onChange={e => setPdfFile(e.target.files[0])} />
               <button
-  onClick={handleSubmit}
-  className={`w-full text-white py-3 rounded-lg transition ${
-    submitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-black hover:bg-gray-800'
-  }`}
-  disabled={submitting}
->
-  {submitting
-    ? (editingNoteId ? 'Updating...' : 'Adding...')
-    : (editingNoteId ? 'Update Note' : 'Add Note')}
-</button>
-
+                onClick={handleSubmit}
+                className={`w-full text-white py-2 sm:py-3 rounded-lg transition ${
+                  submitting ? 'bg-blue-300 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'
+                }`}
+                disabled={submitting}
+              >
+                {submitting
+                  ? (editingNoteId ? 'Updating...' : 'Adding...')
+                  : (editingNoteId ? 'Update Note' : 'Add Note')}
+              </button>
             </div>
           </div>
         </div>
@@ -398,53 +385,51 @@ export default function LessonPlan() {
   );
 }
 
-function EvaluationTable({ submissions, handleEvaluate ,submittingStudentId}) {
+function EvaluationTable({ submissions, handleEvaluate, submittingStudentId }) {
   const [marks, setMarks] = useState({});
-  
   return (
-    <table className="w-full table-auto border border-gray-300 shadow">
-      <thead className="bg-blue-100">
-        <tr>
-          <th className="p-3 border">#</th>
-          <th className="p-3 border">Student Name</th>
-          <th className="p-3 border">Download Link</th>
-          <th className="p-3 border">Marks</th>
-          <th className="p-3 border">Action</th>
-        </tr>
-      </thead>
-      <tbody className="text-black dark:text-white" >
-        {submissions.map((sub, index) => (
-          <tr key={index} className="text-sm">
-            <td className="p-3 border text-center">{index + 1}</td>
-            <td className="p-3 border">{sub.studentName}</td>
-            <td className="p-3 border text-center">
-              <a href={sub.answerLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">View PDF</a>
-            </td>
-            <td className="p-3 border text-center text-black dark:text-black">
-              <input
-                type="number"
-                min={0}
-                max={100}
-                className="w-20 p-1 border rounded"
-                value={marks[sub.studentId] || ''}
-                onChange={(e) => setMarks(prev => ({ ...prev, [sub.studentId]: e.target.value }))}
-              />
-            </td>
-            <td className="p-3 border text-center">
-              <button
-  className={`px-3 py-1 rounded text-white ${
-    submittingStudentId === sub.studentId ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'
-  }`}
-  disabled={submittingStudentId === sub.studentId}
-  onClick={() => handleEvaluate(sub.studentId, marks, setMarks)}
->
-  {submittingStudentId === sub.studentId ? 'Saving...' : 'Evaluate'}
-</button>
-
-            </td>
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[600px] table-auto border border-gray-300 shadow text-xs sm:text-sm">
+        <thead className="bg-blue-100">
+          <tr>
+            <th className="p-2 sm:p-3 border">#</th>
+            <th className="p-2 sm:p-3 border">Student Name</th>
+            <th className="p-2 sm:p-3 border">Download Link</th>
+            <th className="p-2 sm:p-3 border">Marks</th>
+            <th className="p-2 sm:p-3 border">Action</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody className="text-black dark:text-white">
+          {submissions.map((sub, index) => (
+            <tr key={index} className="text-xs sm:text-sm">
+              <td className="p-2 sm:p-3 border text-center">{index + 1}</td>
+              <td className="p-2 sm:p-3 border">{sub.studentName}</td>
+              <td className="p-2 sm:p-3 border text-center">
+                <a href={sub.answerLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">View PDF</a>
+              </td>
+              <td className="p-2 sm:p-3 border text-center text-black dark:text-black">
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  className="w-16 sm:w-20 p-1 border rounded"
+                  value={marks[sub.studentId] || ''}
+                  onChange={(e) => setMarks(prev => ({ ...prev, [sub.studentId]: e.target.value }))}
+                />
+              </td>
+              <td className="p-2 sm:p-3 border text-center">
+                <button
+                  className={`px-2 sm:px-3 py-1 rounded text-white ${submittingStudentId === sub.studentId ? 'bg-blue-300 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'}`}
+                  disabled={submittingStudentId === sub.studentId}
+                  onClick={() => handleEvaluate(sub.studentId, marks, setMarks)}
+                >
+                  {submittingStudentId === sub.studentId ? 'Saving...' : 'Evaluate'}
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }

@@ -62,7 +62,7 @@ export default function StudentList() {
         const parts = batch.batchName.split("-");
         if (parts.length >= 2) {
           courseSet.add(parts[0]);
-          yearSet.add(parts[1].slice(3)); // "JUL25" → "25"
+          yearSet.add(parts[1].slice(3));
         }
       });
 
@@ -105,7 +105,6 @@ export default function StudentList() {
       <div>
         <h2 className="text-2xl font-bold mb-6 text-blue-900 dark:text-white">My Students</h2>
 
-        {/* Filters */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <input
             type="text"
@@ -155,39 +154,57 @@ export default function StudentList() {
           </select>
         </div>
 
-        {/* Student Table */}
         {students.length === 0 ? (
           <p className="text-gray-600 dark:text-gray-400 text-center mt-8">No students found.</p>
         ) : (
-          <div className="overflow-x-auto rounded-lg shadow">
-            <table className="min-w-full bg-white dark:bg-gray-900">
-              <thead>
-                <tr className="bg-blue-100 dark:bg-gray-800 text-blue-900 dark:text-gray-200 text-left text-sm">
-                  <th className="py-3 px-4">Roll No</th>
-                  <th className="py-3 px-4">Name</th>
-                  <th className="py-3 px-4">Email</th>
-                  <th className="py-3 px-4">Phone</th>
-                  <th className="py-3 px-4">Course</th>
-                  <th className="py-3 px-4">Batch</th>
-                </tr>
-              </thead>
-              <tbody>
-                {students.map((student) => (
-                  <tr
-                    key={student._id}
-                    className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 text-sm"
-                  >
-                    <td className="py-3 px-4">{student.rollNo}</td>
-                    <td className="py-2 px-4">{student.name}</td>
-                    <td className="py-2 px-4">{student.email}</td>
-                    <td className="py-2 px-4">{student.phone}</td>
-                    <td className="py-2 px-4">{getCourseName(student.batchName)}</td>
-                    <td className="py-2 px-4">{student.batchName}</td>
+          <>
+            <div className="hidden md:block overflow-x-auto rounded-lg shadow">
+              <table className="min-w-full bg-white dark:bg-gray-900">
+                <thead>
+                  <tr className="bg-blue-100 dark:bg-gray-800 text-blue-900 dark:text-gray-200 text-left text-sm">
+                    <th className="py-3 px-4">Roll No</th>
+                    <th className="py-3 px-4">Name</th>
+                    <th className="py-3 px-4">Email</th>
+                    <th className="py-3 px-4">Phone</th>
+                    <th className="py-3 px-4">Course</th>
+                    <th className="py-3 px-4">Batch</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {students.map((student) => (
+                    <tr
+                      key={student._id}
+                      className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 text-sm"
+                    >
+                      <td className="py-3 px-4">{student.rollNo}</td>
+                      <td className="py-2 px-4">{student.name}</td>
+                      <td className="py-2 px-4">{student.email}</td>
+                      <td className="py-2 px-4">{student.phone}</td>
+                      <td className="py-2 px-4">{getCourseName(student.batchName)}</td>
+                      <td className="py-2 px-4">{student.batchName}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile View Cards */}
+            <div className="md:hidden space-y-4">
+              {students.map((student) => (
+                <div
+                  key={student._id}
+                  className="border rounded-lg p-4 shadow-md bg-white dark:bg-gray-900 dark:border-gray-700"
+                >
+                  <p className="text-sm font-semibold text-blue-800 dark:text-white">{student.name}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Roll No: {student.rollNo}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Email: {student.email}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Phone: {student.phone}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Course: {getCourseName(student.batchName)}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Batch: {student.batchName}</p>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
     </div>
