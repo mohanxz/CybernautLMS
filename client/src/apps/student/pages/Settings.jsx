@@ -2,8 +2,47 @@ import { useEffect, useState } from "react";
 import api from "../api"
 import { toast } from "react-toastify";
 
+
+const SettingsSkeleton = () => (
+  <div style={{ display: 'flex', height: '100vh', backgroundColor: '#f0f0f0', animation: 'pulse 1.5s infinite' }}>
+    <div style={{ flex: 1, padding: '1rem', overflowY: 'auto' }}>
+      <div style={{ width: '25%', height: '40px', backgroundColor: '#e0e0e0', marginBottom: '0.5rem' }} />
+      <div style={{ width: '50%', height: '20px', backgroundColor: '#e0e0e0', marginBottom: '1.5rem' }} />
+      <div style={{ boxShadow: '0 4px 8px rgba(0,0,0,0.1)', borderRadius: '8px', backgroundColor: 'white' }}>
+        <div style={{ padding: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', paddingBottom: '1.5rem', borderBottom: '1px solid #e0e0e0' }}>
+            <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#e0e0e0' }} />
+            <div style={{ marginLeft: '1rem' }}>
+              <div style={{ width: '120px', height: '30px', backgroundColor: '#e0e0e0', marginBottom: '0.5rem' }} />
+              <div style={{ width: '180px', height: '20px', backgroundColor: '#e0e0e0' }} />
+            </div>
+          </div>
+          <div style={{ display: 'flex', borderBottom: '1px solid #e0e0e0' }}>
+            <div style={{ width: '50%', height: '48px', backgroundColor: '#e0e0e0' }} />
+            <div style={{ width: '50%', height: '48px', backgroundColor: '#e0e0e0' }} />
+          </div>
+          <div style={{ padding: '1.5rem', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
+            {[...Array(4)].map((_, i) => (
+              <div key={i}>
+                <div style={{ width: '25%', height: '20px', backgroundColor: '#e0e0e0', marginBottom: '0.5rem' }} />
+                <div style={{ height: '40px', backgroundColor: '#e0e0e0' }} />
+              </div>
+            ))}
+            <div style={{ gridColumn: 'span 2' }}>
+              <div style={{ width: '25%', height: '20px', backgroundColor: '#e0e0e0', marginBottom: '0.5rem' }} />
+              <div style={{ height: '40px', backgroundColor: '#e0e0e0' }} />
+            </div>
+          </div>
+          <div style={{ width: '120px', height: '40px', backgroundColor: '#e0e0e0', borderRadius: '8px' }} />
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
 const Settings = () => {
   const [tab, setTab] = useState("profile");
+  const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -26,17 +65,24 @@ const Settings = () => {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      const token = localStorage.getItem("token");
-      const res = await api.get("/api/settings/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setForm({
-        name: res.data.name || "",
-        email: res.data.email || "",
-        phone: res.data.phone || "",
-        address: res.data.address || "",
-        dob: res.data.dob ? res.data.dob.substring(0, 10) : "", // ISO date to yyyy-mm-dd
-      });
+      try {
+        setLoading(true);
+        const token = localStorage.getItem("token");
+        const res = await api.get("/api/settings/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setForm({
+          name: res.data.name || "",
+          email: res.data.email || "",
+          phone: res.data.phone || "",
+          address: res.data.address || "",
+          dob: res.data.dob ? res.data.dob.substring(0, 10) : "", // ISO date to yyyy-mm-dd
+        });
+      } catch (error) {
+        toast.error("Failed to fetch profile data");
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchProfile();
@@ -84,6 +130,8 @@ const Settings = () => {
       toast.error(err.response?.data?.message || "Failed to change password");
     }
   };
+
+  if (loading) return <SettingsSkeleton />;
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
@@ -224,7 +272,7 @@ const Settings = () => {
                         onClick={() => toggleVisibility(field)}
                         className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-gray-500"
                       >
-                        Ÿ‘
+                        ï¿½ï¿½ï¿½
                       </span>
                     </div>
                   </div>

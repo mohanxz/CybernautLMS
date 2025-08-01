@@ -5,7 +5,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import AdminHome from "./components/AdminHome";
 import ReportPage from "./pages/ReportPage";
 import LessonPlan from './pages/LessonPlan';
-import AdminChat from './pages/AdminChat';
+import NewAdminChat from './pages/NewAdminChat';
 import StudentList from './pages/studentList';
 import SuperAdminChat from './pages/SuperAdminChat';
 import { ToastContainer, toast } from 'react-toastify';
@@ -14,9 +14,8 @@ import Settings from './pages/Settings';
 import Quiz from './pages/Quiz';
 import AdminCoding from './pages/AdminCoding';
 import BatchEvaluation from './pages/BatchEvaluation';
+
 function AppRoutes() {
-
-
   return (
     <>
       <ToastContainer />
@@ -26,7 +25,7 @@ function AppRoutes() {
           element={
             <PrivateRoute>
               <Sidebar>
-              <AdminDashboard />
+                <AdminDashboard />
               </Sidebar>
             </PrivateRoute>
           }
@@ -37,7 +36,7 @@ function AppRoutes() {
           element={
             <PrivateRoute>
               <Sidebar>
-              <AdminHome />
+                <AdminHome />
               </Sidebar>
             </PrivateRoute>
           }
@@ -48,7 +47,7 @@ function AppRoutes() {
           element={
             <PrivateRoute>
               <Sidebar>
-              <StudentList />
+                <StudentList />
               </Sidebar>
             </PrivateRoute>
           }
@@ -59,7 +58,7 @@ function AppRoutes() {
           element={
             <PrivateRoute>
               <Sidebar>
-              <SuperAdminChat />
+                <SuperAdminChat />
               </Sidebar>
             </PrivateRoute>
           }
@@ -70,13 +69,13 @@ function AppRoutes() {
           element={
             <PrivateRoute>
               <Sidebar>
-              <LessonPlan />
+                <LessonPlan />
               </Sidebar>
             </PrivateRoute>
           }
         />
 
-          <Route
+        <Route
           path="/batch/:batchId/code"
           element={
             <PrivateRoute>
@@ -103,30 +102,29 @@ function AppRoutes() {
           element={
             <PrivateRoute>
               <Sidebar>
-              <Quiz />
+                <Quiz />
               </Sidebar>
             </PrivateRoute>
           }
         />
-
-        
 
         <Route
           path="/batch/:batchId/report"
           element={
             <PrivateRoute>
               <Sidebar>
-              <ReportPage />
+                <ReportPage />
               </Sidebar>
             </PrivateRoute>
           }
         />
+
         <Route
           path="/batch/:batchId/chat"
           element={
             <PrivateRoute>
               <Sidebar>
-              <AdminChat />
+                <NewAdminChat />
               </Sidebar>
             </PrivateRoute>
           }
@@ -137,7 +135,7 @@ function AppRoutes() {
           element={
             <PrivateRoute>
               <Sidebar>
-              <Settings />
+                <Settings />
               </Sidebar>
             </PrivateRoute>
           }

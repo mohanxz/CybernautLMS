@@ -55,7 +55,7 @@ export default function SuperAdminChat() {
   if (!room) return null;
 
   return (
-    <div className="flex flex-col h-[88vh] top-0 bg-white dark:bg-black text-black dark:text-white rounded-lg shadow overflow-hidden">
+    <div className="flex flex-col bg-white dark:bg-black text-black dark:text-white rounded-lg shadow overflow-hidden h-full">
 
       {/* Messages */}
       <div
@@ -90,17 +90,17 @@ export default function SuperAdminChat() {
       </div>
 
       {/* Input */}
-      <div className="p-3 bg-white dark:bg-black border-t border-gray-200 dark:border-gray-700 flex items-center gap-2">
+      <div className="p-4 bg-white dark:bg-black border-t border-gray-200 dark:border-gray-700 flex items-center gap-3">
         <input
           value={msg}
           onChange={(e) => setMsg(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-          className="flex-1 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-full px-4 py-2 text-sm outline-none text-black dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-blue-400"
+          className="flex-1 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-full px-4 py-3 text-base outline-none text-black dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-blue-400"
           placeholder="Type a message..."
         />
         <button
           onClick={sendMessage}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-full text-sm"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-full text-base"
         >
           Send
         </button>

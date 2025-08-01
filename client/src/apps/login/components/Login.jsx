@@ -25,7 +25,7 @@ const Login = () => {
       localStorage.setItem("role", role);
       localStorage.setItem("email", email);
 
-      window.location.href = `http://localhost:5173/${role}?token=${accessToken}&role=${role}`;
+      navigate(`/${role}`);
     } catch (err) {
       setError(err.response?.data?.error || "Login failed.");
     } finally {

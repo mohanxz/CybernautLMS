@@ -4,7 +4,43 @@ import API from "../api";
 import { toast } from 'react-toastify';
 import { FaUpload, FaUserPlus, FaDownload } from "react-icons/fa";
 import { FaEye, FaPlus } from "react-icons/fa";
-
+const BatchesSkeleton = () => (
+  <div className="p-4 bg-gray-50 dark:bg-gray-900 h-[89vh] space-y-6 animate-pulse">
+    <div className="h-8 bg-gray-300 dark:bg-gray-700 rounded w-1/3 mb-2"></div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="p-4 bg-white dark:bg-gray-800 border dark:border-gray-700 shadow rounded-lg">
+        <div className="h-6 bg-gray-300 dark:bg-gray-700 rounded w-1/2 mb-2"></div>
+        <div className="h-8 bg-gray-300 dark:bg-gray-700 rounded w-1/4"></div>
+      </div>
+      <div className="p-4 bg-white dark:bg-gray-800 border dark:border-gray-700 shadow rounded-lg">
+        <div className="h-6 bg-gray-300 dark:bg-gray-700 rounded w-1/2 mb-2"></div>
+        <div className="h-8 bg-gray-300 dark:bg-gray-700 rounded w-1/4"></div>
+      </div>
+    </div>
+    <div className="flex flex-col sm:flex-row justify-between items-center mt-8 gap-4">
+      <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded w-full sm:max-w-md"></div>
+      <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+        <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded w-full"></div>
+        <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded w-full"></div>
+      </div>
+      <div className="h-10 bg-blue-400 rounded w-full sm:w-auto"></div>
+    </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
+      {[...Array(2)].map((_, i) => (
+        <div key={i} className="border border-gray-200 dark:border-gray-700 rounded-xl shadow-md p-5 bg-white dark:bg-gray-800 space-y-2">
+          <div className="h-6 bg-gray-300 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+          <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-1/2 mb-2"></div>
+          <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-1/2 mb-2"></div>
+          <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-1/2 mb-2"></div>
+          <div className="pt-2 flex gap-3">
+            <div className="h-8 bg-gray-300 dark:bg-gray-700 rounded w-24"></div>
+            <div className="h-8 bg-blue-400 rounded w-24"></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
 
 const Batches = () => {
   const [batches, setBatches] = useState([]);
@@ -22,7 +58,7 @@ const Batches = () => {
   const [students, setStudents] = useState([]);
   const [selected, setSelected] = useState({});
   const [credentials, setCredentials] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [generatedBatchName, setGeneratedBatchName] = useState("");
@@ -30,8 +66,24 @@ const Batches = () => {
   const [viewBatch, setViewBatch] = useState(null);
 
   useEffect(() => {
-    fetchBatches();
+    const fetchInitialData = async () => {
+      try {
+        setLoading(true);
+        await Promise.all([fetchBatches(), fetchCourses(), fetchStaff()]);
+      } catch (error) {
+        toast.error("Failed to load initial data");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchInitialData();
+  }, []);
+
+  const fetchCourses = () => {
     API.get("/api/courses").then(res => setCourses(res.data));
+  }
+
+  const fetchStaff = () => {
     API.get("/api/admins")
     .then(res => {
       console.log("Received Admins", res.data); // <-- add this
@@ -39,7 +91,7 @@ const Batches = () => {
       console.log("Staff : ",staff);
     })
     .catch(err => console.error("Failed to fetch admins:", err));
-  }, []);
+  }
 
   const fetchBatches = () => {
     API.get("/api/batches")
@@ -220,6 +272,8 @@ const handleSave = async () => {
     return null;
   };
 
+  if (loading) return <BatchesSkeleton />;
+
   const filteredBatches = batches.filter(
     b => {
       const batchYear = getYearFromBatchName(b.batchName);
@@ -246,19 +300,19 @@ const handleSave = async () => {
         </div>
       </div>
 
-      <div className="flex justify-between items-center mt-8 gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-center mt-8 gap-4">
         <input type="text"
           placeholder="Search batches..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="border border-gray-300 dark:border-gray-600 px-4 py-2 rounded w-full max-w-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+          className="border border-gray-300 dark:border-gray-600 px-4 py-2 rounded w-full sm:max-w-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
         />
 
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
           <select
             value={selectedCourse}
             onChange={(e) => setSelectedCourse(e.target.value)}
-            className="border border-gray-300 dark:border-gray-600 px-3 py-2 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="border border-gray-300 dark:border-gray-600 px-3 py-2 rounded w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
           >
             <option value="All">All Courses</option>
             {uniqueCourses.map((course, idx) => (
@@ -269,7 +323,7 @@ const handleSave = async () => {
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(e.target.value)}
-            className="border border-gray-300 dark:border-gray-600 px-3 py-2 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="border border-gray-300 dark:border-gray-600 px-3 py-2 rounded w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
           >
             <option value="All">All Years</option>
             {uniqueYears.map((year, idx) => (
@@ -280,7 +334,7 @@ const handleSave = async () => {
 
         <button
           onClick={() => setShowModal(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 w-full sm:w-auto"
         >
           + Add New Batch
         </button>
@@ -456,7 +510,7 @@ const handleSave = async () => {
 
       {students.length > 0 && (
         <>
-          <div className="overflow-x-auto mb-6 rounded-xl border border-blue-100 dark:border-gray-600 shadow">
+          <div className="overflow-x-auto mb-6 rounded-xl border border-blue-100 dark:border-gray-600 shadow hidden md:block">
             <table className="min-w-full text-sm text-gray-700 dark:text-white">
               <thead className="bg-blue-100 dark:bg-gray-700 text-blue-900 dark:text-gray-200 text-xs uppercase tracking-wider">
                 <tr>
@@ -491,6 +545,25 @@ const handleSave = async () => {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Card View for Mobile */}
+          <div className="md:hidden grid grid-cols-1 gap-4 mb-6">
+            {students.map((stu, i) => (
+              <div key={i} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-gray-200 dark:border-gray-700">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-semibold text-gray-900 dark:text-white">Name: {typeof stu.name === "object" ? stu.name.text : stu.name}</span>
+                  <input
+                    type="checkbox"
+                    className="w-5 h-5 text-blue-600 dark:text-blue-400 border-gray-300 rounded focus:ring-blue-500"
+                    onChange={() => toggleSelect(stu.email)}
+                    checked={!!selected[stu.email]}
+                  />
+                </div>
+                <p className="text-sm text-gray-700 dark:text-gray-300 mb-1">Email: {typeof stu.email === "object" ? stu.email.text : stu.email}</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300">Phone: {typeof stu.phone === "object" ? stu.phone.text : stu.phone}</p>
+              </div>
+            ))}
           </div>
 
          <button

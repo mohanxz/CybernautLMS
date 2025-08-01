@@ -29,185 +29,178 @@ const FinalQuiz = () => {
         navigate("/final-assignment");
       }
     };
+
     fetchQuiz();
-  }, [module, navigate, token]);
+  }, [module, token, navigate]);
 
-  // Enter fullscreen on load
   useEffect(() => {
-    const enterFullScreen = async () => {
-      try {
-        await document.documentElement.requestFullscreen();
-      } catch (err) {
-        console.error("Fullscreen request failed:", err);
-      }
-    };
-    enterFullScreen();
-  }, []);
+    if (timer <= 0) return;
 
-  // Auto-submit on fullscreen exit, tab switch, or unload
-  useEffect(() => {
-    const handleAutoSubmit = () => {
-      if (!submitting) handleSubmit();
-    };
+    const interval = setInterval(() => {
+      setTimer((prev) => {
+        if (prev <= 1) {
+          handleSubmit();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
 
-    const handleFullScreenExit = () => {
-      if (!document.fullscreenElement) handleAutoSubmit();
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "hidden") handleAutoSubmit();
-    };
-
-    const handleBlur = () => {
-      handleAutoSubmit();
-    };
-
-    const handleUnload = (e) => {
-      e.preventDefault();
-      handleAutoSubmit();
-    };
-
-    document.addEventListener("fullscreenchange", handleFullScreenExit);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("blur", handleBlur);
-    window.addEventListener("beforeunload", handleUnload);
-
-    return () => {
-      document.removeEventListener("fullscreenchange", handleFullScreenExit);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("blur", handleBlur);
-      window.removeEventListener("beforeunload", handleUnload);
-    };
-  }, [answers, quiz, submitting]);
-
-  // Timer logic
-  useEffect(() => {
-    if (timer <= 0) {
-      handleSubmit();
-      return;
-    }
-
-    const t = setTimeout(() => setTimer(timer - 1), 1000);
-    return () => clearTimeout(t);
+    return () => clearInterval(interval);
   }, [timer]);
 
-  const formatTime = () => {
-    const mins = String(Math.floor(timer / 60)).padStart(2, "0");
-    const secs = String(timer % 60).padStart(2, "0");
-    return `${mins}:${secs}`;
-  };
-
-  const handleSelect = (index, option) => {
-    const updated = [...answers];
-    updated[index] = option;
-    setAnswers(updated);
+  const handleAnswerChange = (value) => {
+    const newAnswers = [...answers];
+    newAnswers[currentQ] = value;
+    setAnswers(newAnswers);
   };
 
   const handleSubmit = async () => {
-    if (submitting || !quiz) return;
-    setSubmitting(true);
-
     try {
+      setSubmitting(true);
       await axios.post(
         `http://localhost:5003/api/final-quiz/submit/${module}`,
         { answers },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
       toast.success("Quiz submitted successfully!");
-
-      // Exit fullscreen after submission
-      if (document.fullscreenElement) {
-        await document.exitFullscreen();
-      }
-
-      navigate("/student/theory");
+      navigate("/final-assignment");
     } catch (err) {
-      toast.error("Failed to submit quiz.");
+      toast.error("Submission failed.");
+      console.error(err);
+    } finally {
       setSubmitting(false);
     }
   };
 
-  if (!quiz) return <div className="text-white text-center mt-10">Loading Quiz...</div>;
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
 
-  const q = quiz.questions[currentQ];
+  if (!quiz) return <div className="text-center mt-10 text-gray-600">Loading quiz...</div>;
+
+  const currentQuestion = quiz.questions[currentQ];
 
   return (
-    <div className="bg-black text-white min-h-screen flex flex-col items-center justify-center px-4 py-10">
-      <div className="w-full max-w-4xl bg-white text-black rounded-lg shadow-lg p-6 space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-center border-b pb-3">
-          <h2 className="text-xl font-bold text-gray-900">
-            {module} — Question {currentQ + 1} of {quiz.questions.length}
-          </h2>
-          <div className="text-sm font-semibold text-red-600">
-            Time Left: {formatTime()}
+    <div className="max-w-4xl mx-auto py-8 px-4">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+        <div className="p-6">
+          {/* Header */}
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              {module} - Final Quiz
+            </h1>
+            <div className="text-right">
+              <div className={`text-2xl font-bold ${timer <= 60 ? 'text-red-600' : 'text-blue-600'}`}>
+                {formatTime(timer)}
+              </div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Time Remaining</div>
+            </div>
           </div>
-        </div>
 
-        {/* Question */}
-        <div className="space-y-4">
-          <p className="text-lg font-medium">{q.question}</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {["A", "B", "C", "D"].map((opt) => (
-              <button
-                key={opt}
-                onClick={() => handleSelect(currentQ, opt)}
-                className={`px-4 py-3 text-left rounded border text-sm font-medium transition-all
-                  ${answers[currentQ] === opt
-                    ? "bg-black text-white border-black"
-                    : "bg-gray-100 hover:bg-gray-200 border-gray-300"}`}
-              >
-                {opt}. {q.options?.[opt] || ""}
-              </button>
-            ))}
+          {/* Progress Bar */}
+          <div className="mb-6">
+            <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
+              <span>Question {currentQ + 1} of {quiz.questions.length}</span>
+              <span>{Math.round(((currentQ + 1) / quiz.questions.length) * 100)}% Complete</span>
+            </div>
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div 
+                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${((currentQ + 1) / quiz.questions.length) * 100}%` }}
+              ></div>
+            </div>
           </div>
-        </div>
 
-        {/* Navigation */}
-        <div className="flex justify-between items-center pt-4 border-t">
-          <div className="flex gap-2">
+          {/* Question */}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+              {currentQuestion.question}
+            </h2>
+
+            <div className="space-y-3">
+              {currentQuestion.options.map((option, idx) => (
+                <label
+                  key={idx}
+                  className={`flex items-center p-4 border rounded-lg cursor-pointer transition-all duration-200 ${
+                    answers[currentQ] === option
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                      : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name={`question-${currentQ}`}
+                    value={option}
+                    checked={answers[currentQ] === option}
+                    onChange={(e) => handleAnswerChange(e.target.value)}
+                    className="mr-3 text-blue-600"
+                  />
+                  <span className="text-gray-900 dark:text-white">{option}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Navigation */}
+          <div className="flex justify-between items-center">
             <button
+              onClick={() => setCurrentQ(Math.max(0, currentQ - 1))}
               disabled={currentQ === 0}
-              onClick={() => setCurrentQ(currentQ - 1)}
-              className="px-4 py-2 rounded bg-black text-white hover:bg-gray-800 disabled:opacity-30"
+              className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-400 transition-colors"
             >
               Previous
             </button>
-            <button
-              disabled={currentQ === quiz.questions.length - 1}
-              onClick={() => setCurrentQ(currentQ + 1)}
-              className="px-4 py-2 rounded bg-black text-white hover:bg-gray-800 disabled:opacity-30"
-            >
-              Next
-            </button>
-          </div>
-          <button
-            onClick={handleSubmit}
-            className="px-5 py-2 rounded bg-green-600 text-white font-semibold hover:bg-green-700"
-          >
-            Submit Quiz
-          </button>
-        </div>
 
-        {/* Jump to question */}
-        <div className="mt-4">
-          <h4 className="text-sm font-semibold mb-2">Jump to:</h4>
-          <div className="flex flex-wrap gap-2">
-            {quiz.questions.map((_, idx) => (
+            <div className="flex space-x-2">
+              {quiz.questions.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentQ(idx)}
+                  className={`w-10 h-10 rounded-lg font-medium transition-all duration-200 ${
+                    idx === currentQ
+                      ? 'bg-blue-600 text-white'
+                      : answers[idx] !== null
+                      ? 'bg-green-100 text-green-800 border border-green-300'
+                      : 'bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200'
+                  }`}
+                >
+                  {idx + 1}
+                </button>
+              ))}
+            </div>
+
+            {currentQ === quiz.questions.length - 1 ? (
               <button
-                key={idx}
-                onClick={() => setCurrentQ(idx)}
-                className={`w-8 h-8 rounded-full border text-sm font-semibold
-                  ${idx === currentQ
-                    ? "bg-black text-white border-black"
-                    : answers[idx]
-                    ? "bg-green-600 text-white border-green-600"
-                    : "bg-white text-black border-gray-300 hover:bg-gray-100"}`}
+                onClick={handleSubmit}
+                disabled={submitting || answers.some(a => a === null)}
+                className="px-6 py-2 bg-green-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-green-700 transition-colors font-medium"
               >
-                {idx + 1}
+                {submitting ? "Submitting..." : "Submit Quiz"}
               </button>
-            ))}
+            ) : (
+              <button
+                onClick={() => setCurrentQ(Math.min(quiz.questions.length - 1, currentQ + 1))}
+                disabled={currentQ === quiz.questions.length - 1}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
+              >
+                Next
+              </button>
+            )}
+          </div>
+
+          {/* Answer Summary */}
+          <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              <span className="font-medium">Progress:</span> {answers.filter(a => a !== null).length} of {quiz.questions.length} questions answered
+            </div>
+            {answers.some(a => a === null) && (
+              <div className="text-sm text-orange-600 dark:text-orange-400 mt-1">
+                Please answer all questions before submitting.
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -110,6 +110,7 @@ const Sidebar = ({ children }) => {
     return "Admin Dashboard";
   };
 
+  const [isSidebarOpen, setSidebarOpen] = useState(true);
   return (
     <>
       {/* Mobile Topbar */}

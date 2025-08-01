@@ -5,11 +5,32 @@ import { toast, ToastContainer } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import fullstack from '../assets/fullstack.jpg';
 import dataanalytics from '../assets/dataanalytics.jpg';
+import { GridLoading, CardSkeleton, FadeIn, SlideUp, LoadingSpinner } from "../../../shared/LoadingComponents";
 
-const courseImages = {
-  "Full Stack Development": fullstack,
-  "Data Science": dataanalytics,
-};
+
+
+
+const CoursesSkeleton = () => (
+  <div className="p-6 bg-gray-50 dark:bg-gray-900 space-y-8 h-[89vh] animate-pulse">
+    <div className="flex justify-between items-center">
+      <div className="h-8 bg-gray-300 dark:bg-gray-700 rounded w-1/3"></div>
+      <div className="h-10 bg-blue-400 rounded w-32"></div>
+    </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {[...Array(3)].map((_, i) => (
+        <div key={i} className="border dark:border-gray-700 p-4 rounded-lg shadow bg-white dark:bg-gray-800">
+          <div className="h-6 bg-gray-300 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+          <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-1/2 mb-2"></div>
+          <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-1/3 mb-4"></div>
+          <div className="flex justify-end gap-2 mt-4">
+            <div className="h-8 bg-gray-300 dark:bg-gray-700 rounded w-16"></div>
+            <div className="h-8 bg-red-300 rounded w-16"></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
 
 const Courses = () => {
   const [courses, setCourses] = useState([]);
@@ -20,18 +41,34 @@ const Courses = () => {
   const [editCourseId, setEditCourseId] = useState(null);
   const [courseToDelete, setCourseToDelete] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
 
   useEffect(() => {
-    fetchCourses();
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        await new Promise(resolve => setTimeout(resolve, 700));
+        await fetchCourses();
+      } catch (err) {
+        setError("Failed to load courses. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
   }, []);
 
-  const fetchCourses = () => {
-    axios.get("http://localhost:5001/api/courses")
-      .then((res) => {
-        if (Array.isArray(res.data)) setCourses(res.data);
-      })
-      .catch((err) => console.error("Error fetching courses:", err));
+  const fetchCourses = async () => {
+    try {
+      const res = await axios.get("http://localhost:5001/api/courses");
+      if (Array.isArray(res.data)) setCourses(res.data);
+    } catch (err) {
+      console.error("Error fetching courses:", err);
+      throw err;
+    }
   };
 
   const handleSaveCourse = () => {
@@ -89,6 +126,8 @@ const Courses = () => {
         toast.error("Failed to delete course");
       });
   };
+
+  if (loading) return <CoursesSkeleton />;
 
   return (
     <div className="p-6 bg-gray-50 dark:bg-gray-900 space-y-8 h-[89vh] text-blue-900">

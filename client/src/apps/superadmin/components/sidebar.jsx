@@ -7,7 +7,6 @@ import {
 } from "react-icons/fa";
 import { IoSettingsOutline } from "react-icons/io5";
 import {toast} from "react-toastify";
-import bulbImg from '../../../shared/bulb.png';
 
 const menuItems = [
   { id: "dashboard", icon: <FaHome />, label: "Dashboard", path: "/superadmin" },
@@ -24,24 +23,12 @@ const menuItems = [
 ];
 
 
-export default function Sidebar({ onHover }) {
+export default function Sidebar({ onHover, darkMode, setDarkMode, isSidebarOpen, setSidebarOpen }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [active, setActive] = useState("");
   const [userEmail, setUserEmail] = useState("");
-  const [darkMode, setDarkMode] = useState(
-    localStorage.getItem("theme") === "dark"
-  );
 
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
-  }, [darkMode]);
 
   useEffect(() => {
   const currentPath = location.pathname;
@@ -85,61 +72,42 @@ const handleLogout = async () => {
 
   return (
     <>
-      {/* Theme Toggle Button */}
-      <div
-        className="fixed left-1/2 transform -translate-x-1/2 z-50 cursor-pointer transition-all duration-300 hover:scale-110"
-        onClick={() => setDarkMode(!darkMode)}
-      >
-        <div
-          className={`absolute inset-0 rounded-full transition-all duration-500 ${
-            !darkMode ? "bg-yellow-300 blur-2xl opacity-60 scale-125" : "bg-gray-600 opacity-20 scale-110"
-          }`}
-        ></div>
-        <img
-          src={bulbImg}
-          className="relative w-10 h-15 z-20 transition-all duration-300"
-          alt="Toggle Theme"
-        />
-      </div>
 
       <aside
-  className="fixed top-0 left-0 z-40 w-64 h-screen bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 shadow-sm flex flex-col overflow-y-auto scrollbar-hide"
->
+        className={`fixed top-0 left-0 z-40 w-64 h-screen bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 shadow-sm flex-col
+          ${isSidebarOpen ? "flex" : "hidden"} md:flex`}
+      >
+        {/* Close button for mobile */}
+        <button
+          onClick={() => setSidebarOpen(false)}
+          className="md:hidden absolute top-4 right-4 text-gray-600 dark:text-gray-300 text-2xl z-50 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none"
+        >
+          &times;
+        </button>
 
 
 
 
 
-      <div className="flex-1 flex flex-col">
-        {/* Logo Section */}
-        <div className="flex items-center gap-3 p-2 border-b border-gray-200 dark:border-gray-700">
-          <div className="h-11 w-12 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xl font-bold shadow-lg">
-            SA
-          </div>
-          <div>
-            <h1 className="font-bold text-gray-900 dark:text-white text-lg">Super Admin</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">LMS Portal</p>
-          </div>
-        </div>
-
+      <div className="flex-1 flex flex-col overflow-y-auto">
         {/* Profile Section */}
-        <div className="border-b border-gray-200 dark:border-gray-700 p-6">
-          <div className="flex items-center gap-3 bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 px-4 py-3 rounded-xl border border-red-200 dark:border-red-800">
+        <div className="border-b border-gray-200 dark:border-gray-700 h-20 flex items-center px-4 md:px-6">
+          <div className="flex items-center gap-3 bg-gray-100 dark:bg-gray-800 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 w-full">
             <div className="relative">
-              <div className="h-10 w-10 bg-gradient-to-br from-red-600 to-pink-600 rounded-full flex items-center justify-center text-white shadow-sm">
+              <div className="h-10 w-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white shadow-sm">
                 <FaUser className="text-lg" />
               </div>
               <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-900 rounded-full"></div>
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-gray-900 dark:text-white">Super Admin</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">{userEmail}</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-black dark:text-white truncate">Super Admin</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium truncate">{userEmail}</p>
             </div>
           </div>
         </div>
 
         {/* Navigation Menu */}
-        <nav className="flex-1 flex flex-col px-4 py-6 space-y-2">
+        <nav className="flex-1 flex flex-col px-4 md:px-6 py-6 space-y-2 overflow-y-auto">
           {menuItems.map(({ id, icon, label, path }) => {
             const isActive = active === id;
             return (
@@ -155,7 +123,7 @@ const handleLogout = async () => {
                 <span className={`text-lg ${isActive ? "text-white" : "text-blue-700 dark:text-blue-400"}`}>
                   {icon}
                 </span>
-                <span className="text-sm font-semibold tracking-wide">{label}</span>
+                <span className="text-sm font-semibold tracking-wide whitespace-nowrap">{label}</span>
               </button>
             );
           })}

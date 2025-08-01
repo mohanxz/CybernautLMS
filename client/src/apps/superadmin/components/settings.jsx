@@ -67,7 +67,7 @@ const Settings = () => {
   };
 
   return (
-    <div className="flex bg-gradient-to-br from-white via-blue-50 to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 h-screen">
+    <div className="flex bg-gradient-to-br from-white via-blue-50 to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen">
       <div className="flex-1 p-8 overflow-y-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">

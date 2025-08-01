@@ -44,7 +44,7 @@ export default function Salary() {
     <div className="bg-gradient-to-br from-white via-blue-50 to-white min-h-screen h-[89vh] text-black">
       
       <h2 className="text-3xl font-bold mb-6 text-blue-900">Salary Payments</h2>
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto hidden md:block">
         <table className="w-full text-sm border border-blue-200 rounded-lg overflow-hidden shadow-md">
           <thead className="bg-blue-900 text-white text-left">
             <tr>
@@ -79,6 +79,33 @@ export default function Salary() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Card View for Mobile */}
+      <div className="md:hidden grid grid-cols-1 gap-4 mt-4">
+        {admins.map((a, idx) => (
+          <div key={a._id} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-gray-200 dark:border-gray-700">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-lg font-semibold text-gray-900 dark:text-white">{a.name}</span>
+              <span className={`text-sm font-semibold ${a.unpaid ? "text-red-600" : "text-green-600"}`}>
+                {a.unpaid ? "Unpaid" : "Paid"}
+              </span>
+            </div>
+            <p className="text-sm text-gray-700 dark:text-gray-300 mb-1">Salary: <span className="font-semibold">₹{a.salary}</span></p>
+            <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">UPI ID: {a.upi}</p>
+            <div className="flex justify-end">
+              {a.unpaid && (
+                <button
+                  onClick={() => payAdmin(a)}
+                  className="flex items-center gap-2 bg-blue-700 hover:bg-blue-800 transition px-3 py-1 text-sm text-white rounded shadow"
+                >
+                  <FaRupeeSign />
+                  Pay Now
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

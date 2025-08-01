@@ -6,6 +6,7 @@ import CalendarWidget from "../widgets/CalendarWidget";
 import NotesWidget from '../widgets/NotesWidget';
 import CourseProgressWidget from '../widgets/CourseProgressWidget';
 import Quotes from '../widgets/Quotes';
+import { FadeIn, SlideUp, LoadingSpinner } from "../../../shared/LoadingComponents";
 
 function StudentHome() {
   const [student, setStudent] = useState(null);
@@ -13,23 +14,31 @@ function StudentHome() {
   const [latestNote, setLatestNote] = useState(null);
   const [progress, setProgress] = useState({ coding: 0, quiz: 0, assignment: 0 });
   const [reports, setReports] = useState([]);
-  const [quote, setQuote] = useState(null); // ✅ new state for quote
+  const [quote, setQuote] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchStudentData = async () => {
       try {
+        setLoading(true);
+        setError(null);
         const token = localStorage.getItem('token');
         if (!token) return navigate('/');
 
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
         const res = await axios.get('http://localhost:5004/auth/student/me', {
           headers: { Authorization: `Bearer ${token}` },
         });
         setStudent(res.data);
-      } catch {
-        alert('Failed to load student');
-        navigate('/');
+      } catch (err) {
+        setError('Failed to load student data');
+        console.error('Failed to load student:', err);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -39,7 +48,7 @@ function StudentHome() {
   useEffect(() => {
     const allQuotes = Quotes();
     const randomIndex = Math.floor(Math.random() * allQuotes.length);
-    setQuote(allQuotes[randomIndex]); // ✅ pick one random quote
+    setQuote(allQuotes[randomIndex]);
   }, []);
 
   useEffect(() => {
@@ -109,6 +118,57 @@ function StudentHome() {
   }, [student]);
 
   if (!student) return <p className="text-center mt-6 text-gray-500 dark:text-gray-400">Loading...</p>;
+
+  if (loading) {
+    return (
+      <div className="bg-gray-50 dark:bg-gray-900 min-h-screen p-6">
+        <div className="max-w-screen mx-auto">
+          <div className="mb-8">
+            <div className="text-center md:text-left">
+              <div className="h-10 bg-gray-300 rounded w-3/4 mb-3 animate-pulse"></div>
+              <div className="h-8 bg-gray-300 rounded w-1/2 mb-4 animate-pulse"></div>
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-lg">
+                <div className="h-5 bg-gray-300 rounded w-full mb-2 animate-pulse"></div>
+                <div className="h-5 bg-gray-300 rounded w-3/4 animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="h-32 bg-gray-300 rounded-xl animate-pulse"></div>
+            <div className="h-32 bg-gray-300 rounded-xl animate-pulse"></div>
+            <div className="h-32 bg-gray-300 rounded-xl animate-pulse"></div>
+            <div className="h-32 bg-gray-300 rounded-xl animate-pulse"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-gray-50 dark:bg-gray-900 min-h-screen p-6">
+        <div className="max-w-screen mx-auto">
+          <div className="text-center">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
+              <div className="text-red-600 dark:text-red-400 mb-4">
+                <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-red-800 dark:text-red-200 mb-2">Error Loading Dashboard</h3>
+              <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
+              <button 
+                onClick={() => window.location.reload()}
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-50 dark:bg-gray-900 min-h-screen p-6">
@@ -227,58 +287,50 @@ function StudentHome() {
 
             {/* Academic Performance */}
             {reports.length > 0 && (
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-4">
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
                   <div className="w-2 h-6 bg-red-500 rounded-full mr-3"></div>
                   Academic Performance
                 </h2>
                 <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-600">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead className="bg-gray-50 dark:bg-gray-700">
-                        <tr>
-                          <th className="px-6 py-4 text-left font-semibold text-gray-900 dark:text-white">Module</th>
-                          <th className="px-6 py-4 text-left font-semibold text-gray-900 dark:text-white">Day</th>
-                          <th className="px-6 py-4 text-center font-semibold text-gray-900 dark:text-white">Code</th>
-                          <th className="px-6 py-4 text-center font-semibold text-gray-900 dark:text-white">Quiz</th>
-                          <th className="px-6 py-4 text-center font-semibold text-gray-900 dark:text-white">Assignment</th>
-                        </tr>
-                      </thead>
-                    </table>
-                  </div>
-                  <div className="h-[280px] overflow-y-auto">
-
-                    <table className="w-full text-sm">
-                      <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
-                        {[...reports]
-                          .sort((a, b) => b.day - a.day)
-                          .map((report, idx) => (
-                            <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                              <td className="px-6 py-4 text-gray-900 dark:text-white font-medium">{report.module}</td>
-                              <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{report.day}</td>
-                              {report.marksObtained.map((mark, i) => (
-                                <td className="px-6 py-4 text-center" key={i}>
-                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                    mark === -2 
-                                      ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
-                                      : mark === -1
-                                      ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"
-                                      : "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
-                                  }`}>
-                                    {mark === -2 ? "Not Submitted" : mark === -1 ? "Pending" : mark}
-                                  </span>
-                                </td>
-                              ))}
-                            </tr>
-                          ))}
-                      </tbody>
-                    </table>
-                  </div>
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 dark:bg-gray-700">
+                      <tr>
+                        <th className="px-6 py-4 text-left font-semibold text-gray-900 dark:text-white">Module</th>
+                        <th className="px-6 py-4 text-left font-semibold text-gray-900 dark:text-white">Day</th>
+                        <th className="px-6 py-4 text-center font-semibold text-gray-900 dark:text-white">Code</th>
+                        <th className="px-6 py-4 text-center font-semibold text-gray-900 dark:text-white">Quiz</th>
+                        <th className="px-6 py-4 text-center font-semibold text-gray-900 dark:text-white">Assignment</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
+                      {[...reports]
+                        .sort((a, b) => b.day - a.day)
+                        .map((report, idx) => (
+                          <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                            <td className="px-6 py-4 text-gray-900 dark:text-white font-medium">{report.module}</td>
+                            <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{report.day}</td>
+                            {report.marksObtained.map((mark, i) => (
+                              <td className="px-6 py-4 text-center" key={i}>
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                  mark === -2
+                                    ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
+                                    : mark === -1
+                                    ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"
+                                    : "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+                                }`}>
+                                  {mark === -2 ? "Not Submitted" : mark === -1 ? "Pending" : mark}
+                                </span>
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             )}
           </div>
-
 
           {/* Right Sidebar */}
           <div className="lg:col-span-1 space-y-8">
@@ -301,7 +353,7 @@ function StudentHome() {
             </div>
 
             {/* Quick Stats */}
-            <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 h-[300px]">
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 h-[300px] p-6">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
                 <div className="w-2 h-6 bg-teal-500 rounded-full mr-3"></div>
                 Quick Stats

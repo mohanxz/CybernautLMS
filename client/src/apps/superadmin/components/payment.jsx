@@ -3,6 +3,52 @@ import axios from "axios";
 import paidIcon from "../assets/paid.svg";
 import pendingIcon from "../assets/pending.svg";
 
+const PaymentSkeleton = () => (
+  <div className="p-2 bg-gradient-to-br from-white via-blue-50 to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 md:p-4 animate-pulse">
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      {[...Array(4)].map((_, i) => (
+        <div key={i} className="bg-white dark:bg-gray-800 h-30 border border-blue-100 dark:border-gray-700 rounded-2xl p-6 shadow-lg">
+          <div className="h-6 bg-gray-300 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+          <div className="h-8 bg-gray-300 dark:bg-gray-700 rounded w-1/2"></div>
+        </div>
+      ))}
+    </div>
+    <div className="flex justify-center mb-6 gap-4">
+      <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded-full w-32"></div>
+      <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded-full w-32"></div>
+    </div>
+    <div className="bg-white dark:bg-gray-800 p-4 rounded shadow mb-6 border dark:border-gray-700">
+      <div className="h-8 bg-gray-300 dark:bg-gray-700 rounded w-1/3 mb-2"></div>
+      <div className="overflow-x-auto hidden md:block">
+        <table className="w-full text-left text-sm border-separate border-spacing-y-3">
+          <thead>
+            <tr className="text-gray-500 dark:text-gray-400">
+              <th><div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-24"></div></th>
+              <th><div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-24"></div></th>
+              <th><div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-24"></div></th>
+              <th><div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-24"></div></th>
+              <th><div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-24"></div></th>
+              <th><div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-24"></div></th>
+            </tr>
+          </thead>
+          <tbody>
+            {[...Array(3)].map((_, i) => (
+              <tr key={i} className="bg-white dark:bg-gray-700 shadow-sm rounded-md">
+                <td><div className="h-6 bg-gray-300 dark:bg-gray-700 rounded"></div></td>
+                <td><div className="h-6 bg-gray-300 dark:bg-gray-700 rounded"></div></td>
+                <td><div className="h-6 bg-gray-300 dark:bg-gray-700 rounded"></div></td>
+                <td><div className="h-6 bg-gray-300 dark:bg-gray-700 rounded"></div></td>
+                <td><div className="h-6 bg-gray-300 dark:bg-gray-700 rounded"></div></td>
+                <td><div className="h-8 bg-gray-300 dark:bg-gray-700 rounded w-20"></div></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+);
+
 const Payment = () => {
   const [admins, setAdmins] = useState([]);
   const [stats, setStats] = useState({
@@ -14,10 +60,26 @@ const Payment = () => {
   const [view, setView] = useState("salary");
   const [transactions, setTransactions] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(true);
 
   const currentMonth = new Date().getMonth();
 
   useEffect(() => {
+    const fetchSalaryData = async () => {
+      try {
+        setLoading(true);
+        const [adminsRes, statsRes] = await Promise.all([
+          axios.get("http://localhost:5001/api/salary"),
+          axios.get("http://localhost:5001/api/salary/stats/payments"),
+        ]);
+        setAdmins(adminsRes.data);
+        setStats(statsRes.data);
+      } catch (err) {
+        console.error("Failed to fetch salary data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchSalaryData();
   }, []);
 
@@ -75,6 +137,8 @@ const Payment = () => {
       alert("Payment initiation failed");
     }
   };
+
+  if (loading) return <PaymentSkeleton />;
 
   return (
     <div className="p-2 bg-gradient-to-br from-white via-blue-50 to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 md:p-4">
@@ -134,67 +198,120 @@ const Payment = () => {
       {view === "salary" && (
         <div className="bg-white dark:bg-gray-800 p-4 rounded shadow mb-6 border dark:border-gray-700">
           <h2 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">Monthly Salary Payments</h2>
-          <table className="w-full text-left text-sm border-separate border-spacing-y-3">
-            <thead>
-              <tr className="text-gray-500 dark:text-gray-400">
-                <th>Lecturer</th>
-                <th>Amount</th>
-                <th>Status</th>
-                <th>Month</th>
-                <th>Order ID</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody className="text-gray-700 dark:text-gray-300">
-              {admins.map((admin, idx) => {
-                const isPaid = admin.paidForMonth === currentMonth;
-                const status = isPaid ? "Paid" : "Pending";
-                return (
-                  <tr key={idx} className="bg-white dark:bg-gray-700 shadow-sm rounded-md">
-                    <td className="py-3 px-2">{admin.user?.name || "Unnamed"}</td>
-                    <td className="py-3 px-2 text-green-600 dark:text-green-400 font-semibold">₹{admin.salary}</td>
-                    <td className="py-3 px-2">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full ${
-                          isPaid
-                            ? "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300"
-                            : "bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300"
-                        }`}
+          <div className="overflow-x-auto hidden md:block">
+            <table className="w-full text-left text-sm border-separate border-spacing-y-3">
+              <thead>
+                <tr className="text-gray-500 dark:text-gray-400">
+                  <th>Lecturer</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Month</th>
+                  <th>Order ID</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody className="text-gray-700 dark:text-gray-300">
+                {admins.map((admin, idx) => {
+                  const isPaid = admin.paidForMonth === currentMonth;
+                  const status = isPaid ? "Paid" : "Pending";
+                  return (
+                    <tr key={idx} className="bg-white dark:bg-gray-700 shadow-sm rounded-md">
+                      <td className="py-3 px-2">{admin.user?.name || "Unnamed"}</td>
+                      <td className="py-3 px-2 text-green-600 dark:text-green-400 font-semibold">₹{admin.salary}</td>
+                      <td className="py-3 px-2">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full ${
+                            isPaid
+                              ? "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300"
+                              : "bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300"
+                          }`}
+                        >
+                          <img
+                            src={isPaid ? paidIcon : pendingIcon}
+                            alt={status}
+                            className="w-4 h-4"
+                          />
+                          {status}
+                        </span>
+                      </td>
+                      <td className="py-3 px-2">{new Date().toLocaleString('default', { month: 'long' })}</td>
+                      <td className="py-3 px-2">{admin.lastOrderId || "—"}</td>
+                      <td className="py-3 px-2">
+                        {!isPaid && (
+                          <button
+                            className="bg-black dark:bg-gray-600 text-white px-2 py-1 text-xs rounded hover:bg-gray-800 dark:hover:bg-gray-500"
+                            onClick={() => handleApprovePayment(admin)}
+                          >
+                            Approve
+                          </button>
+                        )}
+                        {isPaid && admin.invoiceId && (
+                          <a
+                            href={`http://localhost:5001/api/salary/invoice/${admin.invoiceId}`}
+                            target="_blank"
+                            className="ml-2 text-blue-600 dark:text-blue-400 underline text-xs hover:text-blue-800 dark:hover:text-blue-300"
+                          >
+                            View Invoice
+                          </a>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Card View for Mobile - Salary */}
+          <div className="md:hidden grid grid-cols-1 gap-4 mt-4">
+            {admins.map((admin, idx) => {
+              const isPaid = admin.paidForMonth === currentMonth;
+              const status = isPaid ? "Paid" : "Pending";
+              return (
+                <div key={idx} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-gray-200 dark:border-gray-700">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-lg font-semibold text-gray-900 dark:text-white">{admin.user?.name || "Unnamed"}</span>
+                    <span
+                      className={`inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full ${
+                        isPaid
+                          ? "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300"
+                          : "bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300"
+                      }`}
+                    >
+                      <img
+                        src={isPaid ? paidIcon : pendingIcon}
+                        alt={status}
+                        className="w-4 h-4"
+                      />
+                      {status}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-1">Amount: <span className="font-semibold text-green-600 dark:text-green-400">₹{admin.salary}</span></p>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-1">Month: {new Date().toLocaleString('default', { month: 'long' })}</p>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">Order ID: {admin.lastOrderId || "—"}</p>
+                  <div className="flex justify-end gap-2">
+                    {!isPaid && (
+                      <button
+                        className="bg-black dark:bg-gray-600 text-white px-3 py-1 text-sm rounded hover:bg-gray-800 dark:hover:bg-gray-500"
+                        onClick={() => handleApprovePayment(admin)}
                       >
-                        <img
-                          src={isPaid ? paidIcon : pendingIcon}
-                          alt={status}
-                          className="w-4 h-4"
-                        />
-                        {status}
-                      </span>
-                    </td>
-                    <td className="py-3 px-2">{new Date().toLocaleString('default', { month: 'long' })}</td>
-                    <td className="py-3 px-2">{admin.lastOrderId || "—"}</td>
-                    <td className="py-3 px-2">
-                      {!isPaid && (
-                        <button
-                          className="bg-black dark:bg-gray-600 text-white px-2 py-1 text-xs rounded hover:bg-gray-800 dark:hover:bg-gray-500"
-                          onClick={() => handleApprovePayment(admin)}
-                        >
-                          Approve
-                        </button>
-                      )}
-                      {isPaid && admin.invoiceId && (
-                        <a
-                          href={`http://localhost:5001/api/salary/invoice/${admin.invoiceId}`}
-                          target="_blank"
-                          className="ml-2 text-blue-600 dark:text-blue-400 underline text-xs hover:text-blue-800 dark:hover:text-blue-300"
-                        >
-                          View Invoice
-                        </a>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                        Approve
+                      </button>
+                    )}
+                    {isPaid && admin.invoiceId && (
+                      <a
+                        href={`http://localhost:5001/api/salary/invoice/${admin.invoiceId}`}
+                        target="_blank"
+                        className="text-blue-600 dark:text-blue-400 underline text-sm hover:text-blue-800 dark:hover:text-blue-300"
+                      >
+                        View Invoice
+                      </a>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 

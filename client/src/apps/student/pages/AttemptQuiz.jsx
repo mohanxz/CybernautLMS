@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import {toast} from "react-toastify";
+
 const AttemptQuiz = () => {
   const { noteId } = useParams();
   const navigate = useNavigate();
@@ -111,81 +112,128 @@ const AttemptQuiz = () => {
   };
 
   return (
-    <div className="bg-black text-white min-h-screen flex flex-col items-center justify-center px-4 py-10">
-      <div className="w-full max-w-4xl bg-white text-black rounded-lg shadow-lg p-6 space-y-6">
+    <div className="container" style={{ padding: '2rem' }}>
+      <div className="card" style={{ backgroundColor: 'white', color: 'black', borderRadius: '12px', boxShadow: '0 4px 8px rgba(0,0,0,0.1)', padding: '1.5rem' }}>
+        <div className="card-content">
         {/* Header */}
-        <div className="flex justify-between items-center border-b pb-3">
-          <h2 className="text-xl font-bold text-gray-900">
-            Question {currentQ + 1} of {quiz.questions.length}
-          </h2>
-          <div className="text-sm font-semibold text-red-600">
-            Time Left: {formatTime()}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e0e0e0', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
+            <h2 style={{ fontSize: '1.5rem' }}>
+              Question {currentQ + 1} of {quiz.questions.length}
+            </h2>
+            <h3 style={{ fontSize: '1.25rem', color: 'red' }}>
+              Time Left: {formatTime()}
+            </h3>
           </div>
-        </div>
 
         {/* Question */}
-        <div className="space-y-4">
-          <p className="text-lg font-medium">{q.question}</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {["A", "B", "C", "D"].map((opt) => (
-              <button
-                key={opt}
-                onClick={() => handleSelect(currentQ, opt)}
-                className={`px-4 py-3 text-left rounded border text-sm font-medium transition-all
-                  ${answers[currentQ] === opt
-                    ? "bg-black text-white border-black"
-                    : "bg-gray-100 hover:bg-gray-200 border-gray-300"}`}
-              >
-                {opt}. {q.options?.[opt] || ""}
-              </button>
-            ))}
+        <div style={{ marginBottom: '1.5rem' }}>
+            <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>{q.question}</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              {["A", "B", "C", "D"].map((opt) => (
+                <button
+                  key={opt}
+                  onClick={() => handleSelect(currentQ, opt)}
+                  style={{
+                    width: '100%',
+                    padding: '1rem',
+                    textAlign: 'left',
+                    border: `1px solid ${answers[currentQ] === opt ? '#1976d2' : '#ccc'}`,
+                    borderRadius: '4px',
+                    backgroundColor: answers[currentQ] === opt ? 'black' : '#f5f5f5',
+                    color: answers[currentQ] === opt ? 'white' : 'black',
+                    cursor: 'pointer',
+                    transition: 'background-color 0.3s, border-color 0.3s',
+                  }}
+                >
+                  {opt}. {q.options?.[opt] || ""}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
 
         {/* Navigation */}
-        <div className="flex justify-between items-center pt-4 border-t">
-          <div className="flex gap-2">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '1.5rem', borderTop: '1px solid #e0e0e0' }}>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                onClick={() => setCurrentQ(currentQ - 1)}
+                disabled={currentQ === 0}
+                style={{
+                  backgroundColor: 'black',
+                  color: 'white',
+                  padding: '0.5rem 1rem',
+                  borderRadius: '4px',
+                  cursor: currentQ === 0 ? 'not-allowed' : 'pointer',
+                  opacity: currentQ === 0 ? 0.3 : 1,
+                  border: 'none',
+                }}
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setCurrentQ(currentQ + 1)}
+                disabled={currentQ === quiz.questions.length - 1}
+                style={{
+                  backgroundColor: 'black',
+                  color: 'white',
+                  padding: '0.5rem 1rem',
+                  borderRadius: '4px',
+                  cursor: currentQ === quiz.questions.length - 1 ? 'not-allowed' : 'pointer',
+                  opacity: currentQ === quiz.questions.length - 1 ? 0.3 : 1,
+                  border: 'none',
+                }}
+              >
+                Next
+              </button>
+            </div>
             <button
-              disabled={currentQ === 0}
-              onClick={() => setCurrentQ(currentQ - 1)}
-              className="px-4 py-2 rounded bg-black text-white hover:bg-gray-800 disabled:opacity-30"
+              onClick={handleSubmit}
+              style={{
+                backgroundColor: '#4CAF50',
+                color: 'white',
+                fontWeight: 'bold',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '8px',
+                border: 'none',
+              }}
             >
-              Previous
-            </button>
-            <button
-              disabled={currentQ === quiz.questions.length - 1}
-              onClick={() => setCurrentQ(currentQ + 1)}
-              className="px-4 py-2 rounded bg-black text-white hover:bg-gray-800 disabled:opacity-30"
-            >
-              Next
+              Submit Quiz
             </button>
           </div>
-          <button
-            onClick={handleSubmit}
-            className="px-5 py-2 rounded bg-green-600 text-white font-semibold hover:bg-green-700"
-          >
-            Submit Quiz
-          </button>
-        </div>
 
-        {/* Jump to question */}
-        <div className="mt-4">
-          <h4 className="text-sm font-semibold mb-2">Jump to:</h4>
-          <div className="flex flex-wrap gap-2">
-            {quiz.questions.map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => setCurrentQ(idx)}
-                className={`w-8 h-8 rounded-full border text-sm font-semibold
-                  ${idx === currentQ
-                    ? "bg-black text-white border-black"
-                    : answers[idx]
-                    ? "bg-green-600 text-white border-green-600"
-                    : "bg-white text-black border-gray-300 hover:bg-gray-100"}`}
-              >
-                {idx + 1}
-              </button>
-            ))}
+        <div style={{ marginTop: '1.5rem' }}>
+            <h4 style={{ fontSize: '1.125rem', marginBottom: '0.5rem' }}>Jump to:</h4>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+              {quiz.questions.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentQ(idx)}
+                  style={{
+                    minWidth: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    fontWeight: 'bold',
+                    backgroundColor: idx === currentQ
+                      ? 'black'
+                      : answers[idx]
+                      ? '#4CAF50'
+                      : 'white',
+                    color: idx === currentQ || answers[idx]
+                      ? 'white'
+                      : 'black',
+                    border: `1px solid ${
+                      idx === currentQ
+                        ? 'black'
+                        : answers[idx]
+                        ? '#4CAF50'
+                        : '#ccc'
+                    }`,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {idx + 1}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>

@@ -4,6 +4,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import Editor from "@monaco-editor/react"; // import Monaco Editor
 
+
 const languages = [
   { id: 50, name: "C (GCC 9.2.0)", monacoLang: "c" },
   { id: 54, name: "C++ (GCC 9.2.0)", monacoLang: "cpp" },
@@ -82,17 +83,23 @@ const AttemptCodingQuestion = () => {
   if (!question) return <div className="text-white text-center mt-10">Loading coding question...</div>;
 
   return (
-    <div className="bg-black text-white min-h-screen flex flex-col items-center justify-center px-4 py-10">
-      <div className="w-full max-w-5xl bg-white text-black rounded-lg shadow-lg p-6 space-y-6">
-        <h2 className="text-2xl font-bold">{question.title}</h2>
-        <p className="text-sm text-gray-700 whitespace-pre-line">{question.description}</p>
+    <div className="container" style={{ padding: '2rem' }}>
+      <div className="card" style={{ backgroundColor: 'white', color: 'black', borderRadius: '12px', boxShadow: '0 4px 8px rgba(0,0,0,0.1)', padding: '1.5rem', marginBottom: '1rem' }}>
+        <div className="card-content">
+        <h4 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>
+            {question.title}
+          </h4>
+          <p style={{ whiteSpace: 'pre-line', marginBottom: '1.5rem' }}>
+            {question.description}
+          </p>
 
-        <div>
-          <label className="block font-medium mb-2">Select Language:</label>
+        <div style={{ marginBottom: '1.5rem' }}>
+          <label htmlFor="language-select" style={{ display: 'block', marginBottom: '0.5rem' }}>Select Language</label>
           <select
-            className="w-full border border-gray-300 rounded p-2 mb-4"
+            id="language-select"
             value={language}
             onChange={(e) => setLanguage(Number(e.target.value))}
+            style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
           >
             {languages.map((lang) => (
               <option key={lang.id} value={lang.id}>
@@ -102,21 +109,21 @@ const AttemptCodingQuestion = () => {
           </select>
         </div>
             {question.testCases?.filter(tc => !tc.hidden).length > 0 && (
-  <div>
-    <h3 className="text-lg font-semibold mt-6 mb-2">🧪 Sample Test Cases</h3>
-    {question.testCases.filter(tc => !tc.hidden).map((tc, idx) => (
-      <div key={idx} className="mb-4 bg-gray-100 p-3 rounded">
-        <p><strong>Input #{idx + 1}:</strong></p>
-        <pre className="bg-white p-2 rounded text-sm overflow-x-auto">{(tc.input || []).join('\n')}</pre>
-        <p className="mt-2"><strong>Expected Output:</strong></p>
-        <pre className="bg-white p-2 rounded text-sm overflow-x-auto">{tc.expectedOutput}</pre>
-      </div>
-    ))}
-  </div>
-)}
+              <div style={{ marginBottom: '1.5rem' }}>
+                <h6 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>🧪 Sample Test Cases</h6>
+                {question.testCases.filter(tc => !tc.hidden).map((tc, idx) => (
+                  <div key={idx} style={{ marginBottom: '1rem', padding: '1rem', backgroundColor: '#f0f0f0', borderRadius: '8px' }}>
+                    <strong style={{ fontSize: '0.875rem' }}>Input #{idx + 1}:</strong>
+                    <pre style={{ backgroundColor: 'white', padding: '0.5rem', borderRadius: '4px', overflowX: 'auto', fontSize: '0.875rem' }}>{(tc.input || []).join('\n')}</pre>
+                    <strong style={{ marginTop: '0.5rem', display: 'block', fontSize: '0.875rem' }}>Expected Output:</strong>
+                    <pre style={{ backgroundColor: 'white', padding: '0.5rem', borderRadius: '4px', overflowX: 'auto', fontSize: '0.875rem' }}>{tc.expectedOutput}</pre>
+                  </div>
+                ))}
+              </div>
+            )}
 
-        <label className="block font-medium mb-2">Your Code:</label>
-        <div className="border border-gray-300 rounded">
+        <label style={{ display: 'block', marginBottom: '0.5rem' }}>Your Code:</label>
+        <div style={{ border: '1px solid', borderColor: '#ccc', borderRadius: '4px', overflow: 'hidden', marginBottom: '1.5rem' }}>
           <Editor
             height="500px"
             theme="vs-dark"
@@ -136,12 +143,22 @@ const AttemptCodingQuestion = () => {
         <button
           onClick={handleSubmit}
           disabled={submitting}
-          className="bg-green-600 text-white font-semibold px-6 py-2 rounded hover:bg-green-700 disabled:opacity-50"
+          style={{
+            backgroundColor: '#4CAF50',
+            color: 'white',
+            fontWeight: 'bold',
+            padding: '0.75rem 1.5rem',
+            borderRadius: '8px',
+            opacity: submitting ? 0.7 : 1,
+            cursor: submitting ? 'not-allowed' : 'pointer',
+            border: 'none',
+          }}
         >
           {submitting ? "Submitting..." : "Submit Code"}
         </button>
       </div>
     </div>
+  </div>
   );
 };
 

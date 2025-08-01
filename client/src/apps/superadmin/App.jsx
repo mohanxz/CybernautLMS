@@ -34,13 +34,28 @@ const AppContent = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const pageTitle = routeTitles[location.pathname] || 'Dashboard';
+  const [darkMode, setDarkMode] = useState(
+    localStorage.getItem("theme") === "dark"
+  );
+  const [isSidebarOpen, setSidebarOpen] = useState(true);
+
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  }, [darkMode]);
 
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Sidebar />
-      <div className="flex flex-col flex-1 ml-64 min-h-screen">
+      <Sidebar darkMode={darkMode} setDarkMode={setDarkMode} isSidebarOpen={isSidebarOpen} setSidebarOpen={setSidebarOpen} />
+      <div className="flex flex-col flex-1 md:ml-64 min-h-screen">
 
-        <Topbar pageTitle={pageTitle} />
+        <Topbar pageTitle={pageTitle} darkMode={darkMode} setDarkMode={setDarkMode} toggleSidebar={() => setSidebarOpen(!isSidebarOpen)} />
         <ToastContainer position="top-right" autoClose={3000} />
         <main className="flex-1 overflow-y-auto">
           <Routes>

@@ -126,7 +126,7 @@ const CertificatePage = () => {
                   {eligible.length === 0 ? (
                     <p className="text-sm text-gray-500">None</p>
                   ) : (
-                    <table className="w-full border text-sm mb-6">
+                    <table className="w-full border text-sm mb-6 hidden md:table">
                       <thead className="bg-green-100">
                         <tr>
                           <th className="border p-2">Select</th>
@@ -164,6 +164,32 @@ const CertificatePage = () => {
                       </tbody>
                     </table>
                   )}
+
+                  {/* Card View for Mobile - Eligible Students */}
+                  <div className="md:hidden grid grid-cols-1 gap-4 mt-4">
+                    {eligible.map(s => (
+                      <div key={s._id} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-gray-200 dark:border-gray-700">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm font-semibold text-gray-900 dark:text-white">Roll No: {s.rollNo}</span>
+                          <input
+                            type="checkbox"
+                            checked={selected.includes(s._id)}
+                            onChange={() => handleToggle(s._id)}
+                            className="form-checkbox h-5 w-5 text-blue-600"
+                          />
+                        </div>
+                        <p className="text-lg font-bold text-blue-600 dark:text-blue-400 mb-1">{s.user.name}</p>
+                        <div className="grid grid-cols-2 gap-2 text-sm text-gray-700 dark:text-gray-300">
+                          <div><strong>Coding:</strong> {formatMark(s.marks.codingTotal)}</div>
+                          <div><strong>Quiz:</strong> {formatMark(s.marks.quizTotal)}</div>
+                          <div><strong>Assignment:</strong> {formatMark(s.marks.assignmentTotal)}</div>
+                          <div><strong>Theory:</strong> {formatMark(s.marks.theoryMarks)}</div>
+                          <div><strong>Project:</strong> {formatMark(s.marks.projectMarks)}</div>
+                          <div className="col-span-2 text-base font-bold"><strong>Final Score:</strong> {formatMark(s.marks.finalScore)}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </>
               )}
 
@@ -174,7 +200,7 @@ const CertificatePage = () => {
                   {ineligible.length === 0 ? (
                     <p className="text-sm text-gray-500">None</p>
                   ) : (
-                    <table className="w-full border text-sm">
+                    <table className="w-full border text-sm hidden md:table">
                       <thead className="bg-red-100">
                         <tr>
                           <th className="border p-2">Roll No</th>
@@ -205,6 +231,27 @@ const CertificatePage = () => {
                       </tbody>
                     </table>
                   )}
+
+                  {/* Card View for Mobile - Ineligible Students */}
+                  <div className="md:hidden grid grid-cols-1 gap-4 mt-4">
+                    {ineligible.map(s => (
+                      <div key={s._id} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-gray-200 dark:border-gray-700">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm font-semibold text-gray-900 dark:text-white">Roll No: {s.rollNo}</span>
+                          <span className="text-xs text-red-600 dark:text-red-400">{s.reason || 'N/A'}</span>
+                        </div>
+                        <p className="text-lg font-bold text-red-600 dark:text-red-400 mb-1">{s.user.name}</p>
+                        <div className="grid grid-cols-2 gap-2 text-sm text-gray-700 dark:text-gray-300">
+                          <div><strong>Coding:</strong> {formatMark(s.marks.codingTotal)}</div>
+                          <div><strong>Quiz:</strong> {formatMark(s.marks.quizTotal)}</div>
+                          <div><strong>Assignment:</strong> {formatMark(s.marks.assignmentTotal)}</div>
+                          <div><strong>Theory:</strong> {formatMark(s.marks.theoryMarks)}</div>
+                          <div><strong>Project:</strong> {formatMark(s.marks.projectMarks)}</div>
+                          <div className="col-span-2 text-base font-bold"><strong>Final Score:</strong> {formatMark(s.marks.finalScore)}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </>
               )}
             </div>

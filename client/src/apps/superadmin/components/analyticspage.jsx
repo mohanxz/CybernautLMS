@@ -135,7 +135,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Course Selector */}
-      <div className="flex justify-center gap-2 mb-8 bg-gray-100 dark:bg-gray-800 p-2 rounded-2xl max-w-md mx-auto">
+      <div className="flex flex-wrap justify-center gap-2 mb-8 bg-gray-100 dark:bg-gray-800 p-2 rounded-2xl max-w-md mx-auto">
         {courses.map(c => (
           <button
             key={c}
@@ -155,7 +155,7 @@ export default function AnalyticsPage() {
       {leaderboard.length > 0 && (
         <div className="mb-12">
           <h3 className="text-2xl font-bold text-center mb-8 text-gray-800 dark:text-gray-200">Top Performers</h3>
-          <div className="flex justify-center items-end gap-8 h-72 mb-8">
+          <div className="flex justify-center items-end gap-4 sm:gap-8 h-72 mb-8">
             {top3.map((stu, idx) => {
               const position = idx === 1 ? 1 : idx === 0 ? 2 : 3;
               const lightColors = {
@@ -171,9 +171,9 @@ export default function AnalyticsPage() {
               return (
                 <div
                   key={idx}
-                  className={`flex flex-col items-center justify-end ${
+                  className={`flex flex-col items-center justify-end flex-1 max-w-[120px] sm:max-w-[160px] ${
                     idx === 1 ? 'h-64' : idx === 0 ? 'h-48' : 'h-40'
-                  } w-32 bg-gradient-to-t ${lightColors[position]} ${darkColors[position]} rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-4 relative`}
+                  } bg-gradient-to-t ${lightColors[position]} ${darkColors[position]} rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-2 sm:p-4 relative`}
                 >
                   {stu ? (
                     <>
@@ -186,15 +186,15 @@ export default function AnalyticsPage() {
                           {position}
                         </div>
                       </div>
-                      <img src={profilePic} className="w-16 h-16 rounded-full mb-3 border-4 border-white shadow-md" alt="profile" />
-                      <p className="text-sm font-bold text-center text-white mb-2 leading-tight">{stu.studentName}</p>
-                      <p className="text-white font-bold text-xl mb-1">{stu.totalAvg.toFixed(1)}%</p>
-                      <div className="text-xs text-white/80 bg-black/20 px-2 py-1 rounded-full">
+                      <img src={profilePic} className="w-12 h-12 sm:w-16 sm:h-16 rounded-full mb-1 sm:mb-3 border-4 border-white shadow-md" alt="profile" />
+                      <p className="text-xs sm:text-sm font-bold text-center text-white mb-1 leading-tight">{stu.studentName}</p>
+                      <p className="text-lg sm:text-xl font-bold text-white mb-1">{stu.totalAvg.toFixed(1)}%</p>
+                      <div className="text-xs text-white/80 bg-black/20 px-1 sm:px-2 py-0.5 sm:py-1 rounded-full">
                         Rank #{position}
                       </div>
                     </>
                   ) : (
-                    <div className="text-white/60 text-sm mt-auto">No data</div>
+                    <div className="text-white/60 text-xs sm:text-sm mt-auto">No data</div>
                   )}
                 </div>
               );

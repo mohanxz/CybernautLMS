@@ -1,13 +1,20 @@
 import React from 'react';
-import { FaBell } from 'react-icons/fa';
+import { FaBell, FaBars } from 'react-icons/fa';
+import ThemeToggle from '../../../shared/ThemeToggle';
 
-export default function Topbar({ pageTitle = "Dashboard", adminName = "Admin" }) {
+export default function Topbar({ pageTitle = "Dashboard", adminName = "Admin", darkMode, setDarkMode, toggleSidebar }) {
   return (
     <div className="w-full bg-white dark:bg-black shadow-sm border-b border-gray-200 dark:border-gray-800 z-30">
       <div className="px-6 h-20 flex justify-between items-center">
         
         {/* Left: Page Title */}
         <div className="flex items-center gap-4">
+          <button 
+            className="p-2 text-gray-600 dark:text-gray-300" 
+            onClick={toggleSidebar}
+          >
+            <FaBars className="text-xl" />
+          </button>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
             {pageTitle}
           </h1>
@@ -15,6 +22,9 @@ export default function Topbar({ pageTitle = "Dashboard", adminName = "Admin" })
 
         {/* Right: Actions and User Info */}
         <div className="flex items-center gap-4">
+          
+          {/* Theme Toggle */}
+          <ThemeToggle darkMode={darkMode} setDarkMode={setDarkMode} />
           
           {/* Notifications */}
           <div className="relative">

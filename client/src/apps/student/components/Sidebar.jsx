@@ -8,17 +8,18 @@ import {
   FaUserCircle,
   FaComments,
   FaChartBar, // <-- Added for Quiz Reports
+  FaBars,
+  FaTimes, // Added FaTimes for close button
 } from "react-icons/fa";
 import axios from "axios";
 import { toast } from "react-toastify";
 import Topbar from "./Topbar";
-import bulbImg from '@shared/bulb.png';
 import { FaFileAlt } from "react-icons/fa";
 
 const Sidebar = ({ children, pageTitle }) => {
   const navigate = useNavigate();
   const location = useLocation();
-
+  const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [student, setStudent] = useState(null);
   const [batchId, setBatchId] = useState(null);
   const [darkMode, setDarkMode] = useState(
@@ -75,27 +76,13 @@ const Sidebar = ({ children, pageTitle }) => {
 
   return (
     <div className="flex h-screen bg-white dark:bg-black text-black dark:text-white">
-      {/* Theme Toggle Button */}
-      <div
-        className="fixed left-1/2 transform -translate-x-1/2 z-50 cursor-pointer transition-all duration-300 hover:scale-110"
-        onClick={() => setDarkMode(!darkMode)}
+      <aside
+        className={`fixed top-0 left-0 z-40 w-64 h-screen bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 shadow-sm flex-col ${
+          isSidebarOpen ? "flex" : "hidden"
+        } md:flex`}
       >
-        <div
-          className={`absolute inset-0 rounded-full transition-all duration-500 ${
-            !darkMode ? "bg-yellow-300 blur-2xl opacity-60 scale-125" : "bg-gray-600 opacity-20 scale-110"
-          }`}
-        ></div>
-        <img
-          src={bulbImg}
-          className="relative w-10 h-15 z-20 transition-all duration-300"
-          alt="Toggle Theme"
-        />
-      </div>
-
-      {/* Sidebar */}
-      <div className="flex flex-col w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 shadow-sm relative">
         {/* Profile */}
-        <div className="border-b border-gray-200 dark:border-gray-700 h-20 flex items-center px-4 py-6">
+        <div className="border-b border-gray-200 dark:border-gray-700 h-20 flex items-center px-4 relative">
           <div className="flex items-center gap-3 bg-gray-100 dark:bg-gray-800 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 w-full">
             <div className="relative">
               <div className="h-10 w-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white shadow-sm">
@@ -103,13 +90,22 @@ const Sidebar = ({ children, pageTitle }) => {
               </div>
               <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-900 rounded-full"></div>
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-black dark:text-white">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-black dark:text-white truncate">
                 {student?.user?.name || "Student"}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">{student?.user?.email}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium truncate">
+                {student?.user?.email}
+              </p>
             </div>
           </div>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="md:hidden absolute top-1/2 -translate-y-1/2 right-4 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white focus:outline-none"
+            aria-label="Close sidebar"
+          >
+            <FaTimes className="text-xl" />
+          </button>
         </div>
 
         {/* Navigation */}
@@ -126,7 +122,9 @@ const Sidebar = ({ children, pageTitle }) => {
             }
           >
             <FaHome className="text-lg" />
-            <span className="text-sm font-semibold tracking-wide">Dashboard</span>
+            <span className="text-sm font-semibold tracking-wide">
+              Dashboard
+            </span>
           </NavLink>
 
           {batchId && (
@@ -142,7 +140,9 @@ const Sidebar = ({ children, pageTitle }) => {
                 }
               >
                 <FaChalkboardTeacher className="text-lg" />
-                <span className="text-sm font-semibold tracking-wide">My Course</span>
+                <span className="text-sm font-semibold tracking-wide">
+                  My Course
+                </span>
               </NavLink>
 
               <NavLink
@@ -156,7 +156,9 @@ const Sidebar = ({ children, pageTitle }) => {
                 }
               >
                 <FaComments className="text-lg" />
-                <span className="text-sm font-semibold tracking-wide">Chat</span>
+                <span className="text-sm font-semibold tracking-wide">
+                  Chat
+                </span>
               </NavLink>
 
               <NavLink
@@ -170,7 +172,9 @@ const Sidebar = ({ children, pageTitle }) => {
                 }
               >
                 <FaChartBar className="text-lg" />
-                <span className="text-sm font-semibold tracking-wide">Quiz Reports</span>
+                <span className="text-sm font-semibold tracking-wide">
+                  Quiz Reports
+                </span>
               </NavLink>
             </>
           )}
@@ -186,36 +190,41 @@ const Sidebar = ({ children, pageTitle }) => {
             }
           >
             <FaCog className="text-lg" />
-            <span className="text-sm font-semibold tracking-wide">Profile</span>
+            <span className="text-sm font-semibold tracking-wide">
+              Profile
+            </span>
           </NavLink>
           <NavLink
-  to={`/student/project`}
-  className={({ isActive }) =>
-    `flex items-center gap-4 px-4 py-3 my-1 rounded-xl transition-all duration-200 ease-in-out ${
-      isActive
-        ? "bg-blue-700 text-white shadow-lg"
-        : "hover:bg-gray-100 dark:hover:bg-gray-700 text-black dark:text-white"
-    }`
-  }
->
-  <FaFileAlt className="text-lg" />
-  <span className="text-sm font-semibold tracking-wide">Project</span>
-</NavLink>
+            to={`/student/project`}
+            className={({ isActive }) =>
+              `flex items-center gap-4 px-4 py-3 my-1 rounded-xl transition-all duration-200 ease-in-out ${
+                isActive
+                  ? "bg-blue-700 text-white shadow-lg"
+                  : "hover:bg-gray-100 dark:hover:bg-gray-700 text-black dark:text-white"
+              }`
+            }
+          >
+            <FaFileAlt className="text-lg" />
+            <span className="text-sm font-semibold tracking-wide">
+              Project
+            </span>
+          </NavLink>
 
-<NavLink
-  to={`/student/theory`}
-  className={({ isActive }) =>
-    `flex items-center gap-4 px-4 py-3 my-1 rounded-xl transition-all duration-200 ease-in-out ${
-      isActive
-        ? "bg-blue-700 text-white shadow-lg"
-        : "hover:bg-gray-100 dark:hover:bg-gray-700 text-black dark:text-white"
-    }`
-  }
->
-  <FaFileAlt className="text-lg" />
-  <span className="text-sm font-semibold tracking-wide">Theory</span>
-</NavLink>
-
+          <NavLink
+            to={`/student/theory`}
+            className={({ isActive }) =>
+              `flex items-center gap-4 px-4 py-3 my-1 rounded-xl transition-all duration-200 ease-in-out ${
+                isActive
+                  ? "bg-blue-700 text-white shadow-lg"
+                  : "hover:bg-gray-100 dark:hover:bg-gray-700 text-black dark:text-white"
+              }`
+            }
+          >
+            <FaFileAlt className="text-lg" />
+            <span className="text-sm font-semibold tracking-wide">
+              Theory
+            </span>
+          </NavLink>
         </nav>
 
         {/* Logout */}
@@ -228,11 +237,16 @@ const Sidebar = ({ children, pageTitle }) => {
             <span className="tracking-wide">Sign Out</span>
           </button>
         </div>
-      </div>
-
+      </aside>
       {/* Main Content with Topbar */}
-      <div className="flex-1 flex flex-col h-full bg-white dark:bg-black text-blue">
-        <Topbar pageTitle={pageTitle} userName={student?.user?.name || "Student"} />
+      <div className="flex-1 flex flex-col h-full bg-white dark:bg-black text-blue md:ml-64">
+        <Topbar
+          pageTitle={pageTitle}
+          userName={student?.user?.name || "Student"}
+          darkMode={darkMode}
+          setDarkMode={setDarkMode}
+          toggleSidebar={() => setSidebarOpen(!isSidebarOpen)}
+        />
         <div className="flex-1 overflow-y-auto">{children}</div>
       </div>
     </div>

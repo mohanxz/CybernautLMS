@@ -7,6 +7,7 @@ import {
 import { MdPersonAdd } from 'react-icons/md';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { GridLoading, CardSkeleton, FadeIn, SlideUp, LoadingSpinner } from "../../../shared/LoadingComponents";
 
 
 export default function Admins() {
@@ -29,11 +30,24 @@ export default function Admins() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [adminToDelete, setAdminToDelete] = useState(null);
   const [modules, setModules] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
 
   useEffect(() => {
-    fetchAdmins();
-    fetchModules();
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        await new Promise(resolve => setTimeout(resolve, 600));
+        await Promise.all([fetchAdmins(), fetchModules()]);
+      } catch (err) {
+        setError("Failed to load admin data. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
   }, []);
 
   const fetchModules = async () => {
@@ -126,182 +140,228 @@ const handleCancelDelete = () => {
     admin.user?.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  return (
-    <div className="p-2 h-[89vh] bg-gray-50 dark:bg-gray-900">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Admin Management</h2>
-        <button
-          onClick={() => setShowModal(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center"
-        >
-          <MdPersonAdd className="mr-2" /> Add Admin
-        </button>
-      </div>
-
-      <input
-        type="text"
-        placeholder="Search lecturers..."
-        className="border border-gray-300 dark:border-gray-600 px-4 py-2 rounded w-full mb-6 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-      />
-
-      <div className="grid md:grid-cols-3 gap-6">
-        {filteredAdmins.map((admin) => (
-          <div
-            key={admin._id}
-            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6 rounded-lg shadow hover:shadow-md transition"
-          >
-            <h3 className="text-xl font-semibold text-gray-800 dark:text-white">{admin.user?.name}</h3>
-            <p className="text-gray-600 dark:text-gray-400">{admin.specialisation?.join(', ')}</p>
-            <div className="mt-2 text-sm text-gray-700 dark:text-gray-300 space-y-1">
-              <div><FaEnvelope className="inline mr-2 text-gray-500 dark:text-gray-400" /> {admin.user?.email}</div>
-              <div><FaPhone className="inline mr-2 text-gray-500 dark:text-gray-400" /> {admin.phone}</div>
-              <div><FaChalkboardTeacher className="inline mr-2 text-gray-500 dark:text-gray-400" /> {admin.batchCount || 0} Batches</div>
-            </div>
-            <div className="flex justify-between items-center mt-4 text-sm">
-              <span className="text-blue-600 dark:text-blue-400 font-bold">₹{admin.salary}</span>
-              <div className="space-x-4">
-                <button className="text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300" onClick={() => handleEdit(admin)}><FaEdit /></button>
-                <button className="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300" onClick={() => confirmDelete(admin._id)}><FaTrash /></button>
-
-              </div>
-            </div>
+  if (loading) {
+    return (
+      <div className="p-2 h-[89vh] bg-gray-50 dark:bg-gray-900">
+        <FadeIn>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Admin Management</h2>
+            <div className="h-10 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
           </div>
-        ))}
+          <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-full mb-6 animate-pulse"></div>
+          <div className="grid md:grid-cols-3 gap-6">
+            <GridLoading items={6} CardComponent={CardSkeleton} />
+          </div>
+        </FadeIn>
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-2 h-[89vh] bg-gray-50 dark:bg-gray-900">
+        <FadeIn>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Admin Management</h2>
+          </div>
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
+            <div className="text-red-600 dark:text-red-400 mb-4">
+              <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-red-800 dark:text-red-200 mb-2">Error Loading Admins</h3>
+            <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+            >
+              Try Again
+            </button>
+          </div>
+        </FadeIn>
+      </div>
+    );
+  }
+
+  return (
+    <SlideUp className="p-2 h-[89vh] bg-gray-50 dark:bg-gray-900">
+      <FadeIn delay={100}>
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4 sm:mb-0">Admin Management</h2>
+          <button
+            onClick={() => setShowModal(true)}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center hover:scale-105 transition-transform duration-200 w-full sm:w-auto"
+          >
+            <MdPersonAdd className="mr-2" /> Add Admin
+          </button>
+        </div>
+      </FadeIn>
+
+      <FadeIn delay={200}>
+        <input
+          type="text"
+          placeholder="Search lecturers..."
+          className="border border-gray-300 dark:border-gray-600 px-4 py-2 rounded w-full mb-6 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 transition-all duration-200"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </FadeIn>
+
+      <FadeIn delay={300}>
+        <div className="grid md:grid-cols-3 gap-6">
+          {filteredAdmins.map((admin, index) => (
+            <SlideUp key={admin._id} delay={400 + (index * 100)}>
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6 rounded-lg shadow hover:shadow-lg transition-all duration-300 hover:scale-105">
+                <h3 className="text-xl font-semibold text-gray-800 dark:text-white">{admin.user?.name}</h3>
+                <p className="text-gray-600 dark:text-gray-400">{admin.specialisation?.join(', ')}</p>
+                <div className="mt-2 text-sm text-gray-700 dark:text-gray-300 space-y-1">
+                  <div><FaEnvelope className="inline mr-2 text-gray-500 dark:text-gray-400" /> {admin.user?.email}</div>
+                  <div><FaPhone className="inline mr-2 text-gray-500 dark:text-gray-400" /> {admin.phone}</div>
+                  <div><FaChalkboardTeacher className="inline mr-2 text-gray-500 dark:text-gray-400" /> {admin.batchCount || 0} Batches</div>
+                </div>
+                <div className="flex justify-between items-center mt-4 text-sm">
+                  <span className="text-blue-600 dark:text-blue-400 font-bold">₹{admin.salary}</span>
+                  <div className="space-x-4">
+                    <button className="text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300" onClick={() => handleEdit(admin)}><FaEdit /></button>
+                    <button className="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300" onClick={() => confirmDelete(admin._id)}><FaTrash /></button>
+                  </div>
+                </div>
+              </div>
+            </SlideUp>
+          ))}
+        </div>
+      </FadeIn>
 
       {/* Modal */}
       {showModal && (
-  <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-    <div className="bg-white dark:bg-gray-800 p-8 rounded-lg w-full max-w-md shadow-xl">
-      <div className="flex justify-between mb-4">
-        <h3 className="text-xl font-bold text-gray-800 dark:text-white">
-          {isEditing ? 'Edit Lecturer' : 'Add New Lecturer'}
-        </h3>
-        <button
-          onClick={() => {
-            setShowModal(false);
-            setIsEditing(false);
-            setEditingId(null);
-            setFormData({
-              name: '',
-              email: '',
-              phone: '',
-              salary: '',
-              specialisation: '',
-              upi: '',
-              dob: ''
-            });
-          }}
-          className="text-gray-600 dark:text-gray-300 text-lg"
-        >
-          ×
-        </button>
-      </div>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          type="text"
-          placeholder="Full Name"
-          className="w-full border px-4 py-2 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 border-gray-300 dark:border-gray-600"
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          required
-        />
-        <input
-          type="email"
-          placeholder="Email"
-          className="w-full border px-4 py-2 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 border-gray-300 dark:border-gray-600"
-          value={formData.email}
-          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-          required
-        />
-        <input
-          type="text"
-          placeholder="Phone"
-          className="w-full border px-4 py-2 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 border-gray-300 dark:border-gray-600"
-          value={formData.phone}
-          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-          required
-        />
-        <div className="mb-2">
-  <label className="block text-gray-700 dark:text-white mb-1">Specialisation</label>
-  <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded p-2 dark:border-gray-600">
-    {modules.map((mod, i) => (
-      <label key={i} className="flex items-center space-x-2 text-sm text-gray-800 dark:text-white">
-        <input
-          type="checkbox"
-          checked={formData.specialisation.includes(mod)}
-          onChange={(e) => {
-            const newSpecs = e.target.checked
-              ? [...formData.specialisation, mod]
-              : formData.specialisation.filter(s => s !== mod);
-            setFormData({ ...formData, specialisation: newSpecs });
-          }}
-        />
-        <span>{mod}</span>
-      </label>
-    ))}
-  </div>
-</div>
-        <input
-          type="text"
-          placeholder="UPI"
-          className="w-full border px-4 py-2 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 border-gray-300 dark:border-gray-600"
-          value={formData.upi}
-          onChange={(e) => setFormData({ ...formData, upi: e.target.value })}
-        />
-        <input
-          type="date"
-          placeholder="Date of Birth"
-          className="w-full border px-4 py-2 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 border-gray-300 dark:border-gray-600"
-          value={formData.dob}
-          onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
-          required
-        />
-        <input
-          type="number"
-          placeholder="Monthly Salary"
-          className="w-full border px-4 py-2 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 border-gray-300 dark:border-gray-600"
-          value={formData.salary}
-          onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
-          required
-        />
-        <button
-          type="submit"
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded"
-        >
-          {isEditing ? 'Update Lecturer' : 'Add Lecturer'}
-        </button>
-      </form>
-    </div>
-  </div>
-)}
-
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+          <div className="bg-white dark:bg-gray-800 p-8 rounded-lg w-full max-w-md shadow-xl">
+            <div className="flex justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-800 dark:text-white">
+                {isEditing ? 'Edit Lecturer' : 'Add New Lecturer'}
+              </h3>
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                  setIsEditing(false);
+                  setEditingId(null);
+                  setFormData({
+                    name: '',
+                    email: '',
+                    phone: '',
+                    salary: '',
+                    specialisation: '',
+                    upi: '',
+                    dob: ''
+                  });
+                }}
+                className="text-gray-600 dark:text-gray-300 text-lg"
+              >
+                ×
+              </button>
+            </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <input
+                type="text"
+                placeholder="Full Name"
+                className="w-full border px-4 py-2 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 border-gray-300 dark:border-gray-600"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+              />
+              <input
+                type="email"
+                placeholder="Email"
+                className="w-full border px-4 py-2 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 border-gray-300 dark:border-gray-600"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                required
+              />
+              <input
+                type="text"
+                placeholder="Phone"
+                className="w-full border px-4 py-2 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 border-gray-300 dark:border-gray-600"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                required
+              />
+              <div className="mb-2">
+                <label className="block text-gray-700 dark:text-white mb-1">Specialisation</label>
+                <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded p-2 dark:border-gray-600">
+                  {modules.map((mod, i) => (
+                    <label key={i} className="flex items-center space-x-2 text-sm text-gray-800 dark:text-white">
+                      <input
+                        type="checkbox"
+                        checked={formData.specialisation.includes(mod)}
+                        onChange={(e) => {
+                          const newSpecs = e.target.checked
+                            ? [...formData.specialisation, mod]
+                            : formData.specialisation.filter(s => s !== mod);
+                          setFormData({ ...formData, specialisation: newSpecs });
+                        }}
+                      />
+                      <span>{mod}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <input
+                type="text"
+                placeholder="UPI"
+                className="w-full border px-4 py-2 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 border-gray-300 dark:border-gray-600"
+                value={formData.upi}
+                onChange={(e) => setFormData({ ...formData, upi: e.target.value })}
+              />
+              <input
+                type="date"
+                placeholder="Date of Birth"
+                className="w-full border px-4 py-2 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 border-gray-300 dark:border-gray-600"
+                value={formData.dob}
+                onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
+                required
+              />
+              <input
+                type="number"
+                placeholder="Monthly Salary"
+                className="w-full border px-4 py-2 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 border-gray-300 dark:border-gray-600"
+                value={formData.salary}
+                onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
+                required
+              />
+              <button
+                type="submit"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded"
+              >
+                {isEditing ? 'Update Lecturer' : 'Add Lecturer'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       {deleteModalOpen && (
-  <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-    <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-sm">
-      <h3 className="text-lg font-semibold text-gray-800 mb-4">Confirm Deletion</h3>
-      <p className="text-gray-600 mb-6">Are you sure you want to delete this lecturer? This action cannot be undone.</p>
-      <div className="flex justify-end gap-4">
-        <button
-          onClick={handleCancelDelete}
-          className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-gray-800"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={handleDeleteConfirmed}
-          className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white"
-        >
-          Yes, Delete
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
-    </div>
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-sm">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Confirm Deletion</h3>
+            <p className="text-gray-600 mb-6">Are you sure you want to delete this lecturer? This action cannot be undone.</p>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={handleCancelDelete}
+                className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirmed}
+                className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white"
+              >
+                Yes, Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </SlideUp>
   );
 }
