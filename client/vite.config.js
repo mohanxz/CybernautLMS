@@ -4,6 +4,7 @@ import path from 'path';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+  base: "./", // ✅ relative paths for static assets in production
   plugins: [
     react(),
     VitePWA({
@@ -44,6 +45,10 @@ export default defineConfig({
     port: 5173,
   },
   preview: {
-  port: 5173
-  }
+    port: 5173,
+  },
+  build: {
+    outDir: 'dist', // ✅ required for Vercel to find static output
+    emptyOutDir: true,
+  },
 });
