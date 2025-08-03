@@ -2,10 +2,9 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: 'http://localhost:5001', // your backend URL
+  baseURL: import.meta.env.VITE_SUPERADMIN_API, // use .env variable
 });
 
-// Add token to headers
 API.interceptors.request.use((req) => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -14,14 +13,12 @@ API.interceptors.request.use((req) => {
   return req;
 });
 
-// Handle token errors globally
 API.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response && [401, 403].includes(err.response.status)) {
-      // Clear session and redirect to login
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      window.location.href = import.meta.env.VITE_FRONTEND_URL + '/login'; // redirect using env
     }
     return Promise.reject(err);
   }

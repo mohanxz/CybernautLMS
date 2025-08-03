@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import API from "../api";
 import { TableLoading, FadeIn, SlideUp, LoadingSpinner } from "../../../shared/LoadingComponents";
 
 const StudentSkeleton = () => (
@@ -113,7 +113,7 @@ const Student = () => {
     setError(null);
     // Add a small delay to show loading animation
     await new Promise(resolve => setTimeout(resolve, 800));
-    const res = await axios.get("http://localhost:5001/api/students");
+    const res = await API.get("/api/students");
     const studentList = res.data;
 
     setStudents(studentList);

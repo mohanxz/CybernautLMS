@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
+import API from '../api'; // Adjust the import based on your API setup
 
 export default function EvaluateSubmissions() {
   const { batch, module, title, day } = useParams();
   const [submissions, setSubmissions] = useState([]);
   const [marks, setMarks] = useState({});
   const [loading, setLoading] = useState(true);
-  const backendBase = 'http://localhost:5002';
+  
 
   const fetchSubmissions = async () => {
     try {

@@ -33,18 +33,19 @@ const AdminLayout = ({ children }) => {
   }, [batchId]);
 
   const handleLogout = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      await axios.post("http://localhost:5004/auth/logout", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      window.location.href = "http://localhost:3000/login";
-    } catch (err) {
-      console.error("Logout failed:", err);
-    }
-  };
+  try {
+    const token = localStorage.getItem("token");
+    await axios.post(`${import.meta.env.VITE_LOGIN_API}/auth/logout`, null, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    window.location.href = `${import.meta.env.VITE_FRONTEND_URL}/login`;
+  } catch (err) {
+    console.error("Logout failed:", err);
+  }
+};
+
 
   useEffect(() => {
     const handleClickOutside = (event) => {

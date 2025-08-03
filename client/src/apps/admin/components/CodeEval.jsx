@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-
+import API from "../api";
 const languages = [
   { id: 71, name: "Python (3.8.1)" },
   { id: 62, name: "Java (OpenJDK 13.0.1)" },
@@ -29,7 +29,7 @@ const CodeEval = ({ noteId, sourceCode: initialCode = "", languageId, onClose })
   useEffect(() => {
     const fetchQuestion = async () => {
       try {
-        const res = await axios.get(`http://localhost:5002/api/coding-questions/by-note/${noteId}`);
+        const res = await API.get(`/api/coding-questions/by-note/${noteId}`);
         const question = res.data[0];
 
         if (question) {
@@ -60,7 +60,7 @@ const CodeEval = ({ noteId, sourceCode: initialCode = "", languageId, onClose })
     for (let i = 0; i < updatedTestCases.length; i++) {
       const { input, expectedOutput } = updatedTestCases[i];
       try {
-        const response = await axios.post("http://localhost:5002/api/codeEval/run", {
+        const response = await API.post("/api/codeEval/run", {
           language_id: language.id,
           source_code: sourceCode,
           stdin: input,
@@ -100,7 +100,7 @@ const CodeEval = ({ noteId, sourceCode: initialCode = "", languageId, onClose })
     </button>
 
     <div style={{ paddingTop: 40 }}> {/* Push content below close button */}
-      <h1>🧠 Code Tester</h1>
+      <h1>Code Tester</h1>
       <h2>{questionTitle}</h2>
 
       <label>Language:</label>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from "react-router-dom";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
-import axios from 'axios';
+import API from '../api';
 import { FaUser, FaUsers, FaBook, FaFolderPlus, FaMoneyBill } from 'react-icons/fa';
 import { StatCardSkeleton, SystemOverviewSkeleton, FadeIn, SlideUp, LoadingSpinner } from "../../../shared/LoadingComponents";
 
@@ -31,8 +31,8 @@ useEffect(() => {
       
       // Fetch both overview and stats
       const [overviewRes, statsRes] = await Promise.all([
-        axios.get("http://localhost:5001/api/system/overview"),
-        axios.get('http://localhost:5001/api/stats')
+        API.get("/api/system/overview"),
+        API.get('/api/stats')
       ]);
       
       setOverview(overviewRes.data);

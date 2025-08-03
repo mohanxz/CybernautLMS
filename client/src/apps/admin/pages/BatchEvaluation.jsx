@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useState } from "react";
 import axios from "axios";
+import API from "../api"; // Adjust the import based on your API setup
 import { useNavigate, useParams } from "react-router-dom";
 import { FaPlus, FaEdit, FaUpload } from "react-icons/fa";
 import toast from "react-hot-toast";
 
-const backendBase = "http://localhost:5002";
 
 const BatchEvaluation = () => {
   const { batchId } = useParams();
@@ -26,7 +26,7 @@ const BatchEvaluation = () => {
     if (!token) return navigate("/login");
 
     try {
-      const res = await axios.get(`${backendBase}/api/admin-batches/${batchId}`, {
+      const res = await API.get(`/api/admin-batches/${batchId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -53,7 +53,7 @@ const BatchEvaluation = () => {
 
   const fetchAnswerUrls = async (student, batchName) => {
     try {
-      const res = await axios.get(`${backendBase}/api/s3-answers/check`, {
+      const res = await API.get(`/api/s3-answers/check`, {
         params: {
           batchName,
           studentName: student.user?.name,
@@ -72,7 +72,7 @@ const BatchEvaluation = () => {
 
     setLoading(true);
     try {
-      const res = await axios.get(`${backendBase}/api/batch-evaluation/${batchId}/${selectedModule}`, {
+      const res = await API.get(`/api/batch-evaluation/${batchId}/${selectedModule}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -113,8 +113,8 @@ const BatchEvaluation = () => {
     formDataUpload.append("file", projectFile);
 
     try {
-      const res = await axios.post(
-        `${backendBase}/upload-project?batch=${batchId}&title=${selectedModule}`,
+      const res = await API.post(
+        `/upload-project?batch=${batchId}&title=${selectedModule}`,
         formDataUpload,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -124,7 +124,7 @@ const BatchEvaluation = () => {
       const s3path = res.data.s3path;
       setFormData((prev) => ({ ...prev, projectS3Url: s3path }));
 
-      await axios.put(`${backendBase}/api/batch-evaluation/${evaluation._id}`, {
+      await API.put(`/api/batch-evaluation/${evaluation._id}`, {
         projectS3Url: s3path,
       });
 
@@ -136,7 +136,7 @@ const BatchEvaluation = () => {
 
   const saveEvaluation = async () => {
     try {
-      await axios.put(`${backendBase}/api/batch-evaluation/${evaluation._id}`, {
+      await API.put(`/api/batch-evaluation/${evaluation._id}`, {
         projectS3Url: formData.projectS3Url,
         studentMarks: formData.studentMarks.map((s) => ({
           student: s.student._id,
@@ -153,8 +153,8 @@ const BatchEvaluation = () => {
 
   const createEvaluation = async () => {
     try {
-      await axios.post(
-        `${backendBase}/api/batch-evaluation`,
+      await API.post(
+        `/api/batch-evaluation`,
         {
           batch: batchId,
           module: selectedModule,

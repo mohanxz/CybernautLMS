@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import API from "../api";
 import paidIcon from "../assets/paid.svg";
 import pendingIcon from "../assets/pending.svg";
 
@@ -69,8 +69,8 @@ const Payment = () => {
       try {
         setLoading(true);
         const [adminsRes, statsRes] = await Promise.all([
-          axios.get("http://localhost:5001/api/salary"),
-          axios.get("http://localhost:5001/api/salary/stats/payments"),
+          API.get("/api/salary"),
+          API.get("/api/salary/stats/payments"),
         ]);
         setAdmins(adminsRes.data);
         setStats(statsRes.data);
@@ -86,8 +86,8 @@ const Payment = () => {
   const fetchSalaryData = async () => {
     try {
       const [adminsRes, statsRes] = await Promise.all([
-        axios.get("http://localhost:5001/api/salary"),
-        axios.get("http://localhost:5001/api/salary/stats/payments"),
+        API.get("/api/salary"),
+        API.get("/api/salary/stats/payments"),
       ]);
       setAdmins(adminsRes.data);
       setStats(statsRes.data);
@@ -98,7 +98,7 @@ const Payment = () => {
 
   const fetchTransactions = async (count = 10) => {
     try {
-      const res = await axios.get(`http://localhost:5001/api/salary/recent-transactions?count=${count}`);
+      const res = await API.get(`/api/salary/recent-transactions?count=${count}`);
       setTransactions(res.data.items);
     } catch (err) {
       console.error("Failed to fetch transactions:", err);
@@ -107,7 +107,7 @@ const Payment = () => {
 
   const handleApprovePayment = async (admin) => {
     try {
-      const res = await axios.post(`http://localhost:5001/api/salary/${admin._id}/pay`);
+      const res = await API.post(`/api/salary/${admin._id}/pay`);
       const { orderId, amount, adminName } = res.data;
       
       const options = {
@@ -118,7 +118,7 @@ const Payment = () => {
         description: `Salary for ${adminName}`,
         order_id: orderId,
         handler: async function (response) {
-          await axios.post(`http://localhost:5001/api/salary/${admin._id}/verify`, {
+          await API.post(`/api/salary/${admin._id}/verify`, {
             paymentId: response.razorpay_payment_id,
             orderId: response.razorpay_order_id,
             signature: response.razorpay_signature,

@@ -15,7 +15,7 @@ import {
   FaCode,
   FaBars,
 } from "react-icons/fa";
-import axios from "axios";
+import API from "../api";
 import { toast } from "react-toastify";
 import Topbar from "./Topbar";
 
@@ -42,8 +42,8 @@ const Sidebar = ({ children }) => {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    axios
-      .get("http://localhost:5002/api/dashboard/lecturer", {
+    API
+      .get("/api/dashboard/lecturer", {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       })

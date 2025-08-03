@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import API from '../api';
 
 const PrivateRoute = () => {
@@ -8,7 +8,7 @@ const PrivateRoute = () => {
       const role = localStorage.getItem('role');
 
       if (!token || !role) {
-        window.location.href = '/login';
+        window.location.href = `${import.meta.env.VITE_FRONTEND_URL}/login`;
         return;
       }
 
@@ -19,23 +19,23 @@ const PrivateRoute = () => {
         });
 
         // Redirect based on role
+        const redirectBase = import.meta.env.VITE_FRONTEND_URL;
         if (role === 'superadmin') {
-          window.location.href = `http://localhost:5173/superadmin?token=${token}&role=${role}`;
+          window.location.href = `${redirectBase}/superadmin?token=${token}&role=${role}`;
         } else if (role === 'admin') {
-          window.location.href = `http://localhost:5173/admin?token=${token}&role=${role}`;
+          window.location.href = `${redirectBase}/admin?token=${token}&role=${role}`;
         } else if (role === 'student') {
-          window.location.href = `http://localhost:5173/student?token=${token}&role=${role}`;
+          window.location.href = `${redirectBase}/student?token=${token}&role=${role}`;
         } else {
           alert('Unknown user role');
           localStorage.clear();
-          window.location.href = '/login';
+          window.location.href = `${redirectBase}/login`;
         }
-
       } catch (err) {
         // Token invalid or expired
         console.error('Token invalid:', err);
         localStorage.clear();
-        window.location.href = '/login';
+        window.location.href = `${import.meta.env.VITE_FRONTEND_URL}/login`;
       }
     };
 

@@ -11,7 +11,7 @@ const PrivateRoute = ({ children }) => {
     if (!token) return;
 
     try {
-      await axios.post('http://localhost:5004/auth/logout', null, {
+      await axios.post(`${import.meta.env.VITE_LOGIN_API}/auth/logout`, null, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -20,7 +20,7 @@ const PrivateRoute = ({ children }) => {
       console.error("Logout request failed:", err.message);
     } finally {
       localStorage.removeItem('token');
-      window.location.href = 'http://localhost:5173'; // redirect to login
+      window.location.href = `${import.meta.env.VITE_FRONTEND_URL}/login`; // Redirect using env
     }
   };
 
@@ -31,12 +31,12 @@ const PrivateRoute = ({ children }) => {
       if (!token) {
         setIsAuthenticated(false);
         setCheckingAuth(false);
-        window.location.href = 'http://localhost:5173'; // redirect to login
+        window.location.href = `${import.meta.env.VITE_FRONTEND_URL}/login`;
         return;
       }
 
       try {
-        await axios.get('http://localhost:5004/auth/verify', {
+        await axios.get(`${import.meta.env.VITE_LOGIN_API}/auth/verify`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -45,7 +45,7 @@ const PrivateRoute = ({ children }) => {
         setIsAuthenticated(true);
       } catch (err) {
         console.error("Token verification failed:", err.message);
-        await logout(); // logout if token is invalid or expired
+        await logout();
         return;
       } finally {
         setCheckingAuth(false);

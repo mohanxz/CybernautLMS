@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: 'https://cybernaut-lms-login.onrender.com', // your backend URL
+  baseURL: import.meta.env.VITE_LOGIN_API, // ✅ login backend URL via env
 });
 
 // Add token to headers
@@ -21,7 +21,7 @@ API.interceptors.response.use(
     if (err.response && [401, 403].includes(err.response.status)) {
       // Clear session and redirect to login
       localStorage.removeItem('token');
-      window.location.href = 'https://cybernaut-lms-v2.onrender.com/login'; // redirect to login page
+      window.location.href = `${import.meta.env.VITE_FRONTEND_URL}/login`; // ✅ frontend redirect via env
     }
     return Promise.reject(err);
   }

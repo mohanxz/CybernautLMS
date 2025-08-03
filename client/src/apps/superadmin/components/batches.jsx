@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import API from "../api";
 import { toast } from 'react-toastify';
 import { FaUpload, FaUserPlus, FaDownload } from "react-icons/fa";

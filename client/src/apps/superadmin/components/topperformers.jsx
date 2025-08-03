@@ -12,7 +12,7 @@ export default function TopPerformers() {
 
   const fetchData = async () => {
     try {
-      const res = await axios.get(`http://localhost:5004/api/tests/top/${course}`);
+      const res = await axios.get(`${import.meta.env.VITE_LOGIN_API}/api/tests/top/${course}`);
       const formattedData = res.data.map(item => ({
         studentName: item.studentName,
         quizAvg: item.quizAvg,

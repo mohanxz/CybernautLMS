@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import API from '../api';
 import { toast } from 'react-toastify';
 
 const CertificatePage = () => {
@@ -19,7 +20,7 @@ const CertificatePage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await axios.get('http://localhost:5001/api/certificates/eligible');
+        const res = await API.get('/api/certificates/eligible');
         setData(res.data);
         console.log("Fetched data:", res.data);
 
@@ -54,7 +55,7 @@ const CertificatePage = () => {
     }
     setLoading(true);
     try {
-      await axios.post('/api/superadmin/generate', { students: selected });
+      await API.post('/api/superadmin/generate', { students: selected });
       toast.success('Certificates generated!');
       setSelected([]);
     } catch (err) {

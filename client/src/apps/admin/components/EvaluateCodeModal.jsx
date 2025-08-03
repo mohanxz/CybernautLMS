@@ -1,11 +1,12 @@
 // components/EvaluateCodeModal.jsx
 import React, { useState } from 'react';
 import axios from 'axios';
+import API from '../api'; // Adjust the import based on your API setup
 import { toast } from 'react-toastify';
 import CodeEval from "./CodeEval";
 
 export default function EvaluateCodeModal({ data, onClose, module }) {
-  const backendBase = 'http://localhost:5002';
+  
   const [marks, setMarks] = useState({});
   const [submittingStudentId, setSubmittingStudentId] = useState(null);
   const [checkOutputData, setCheckOutputData] = useState(null);
@@ -16,7 +17,7 @@ export default function EvaluateCodeModal({ data, onClose, module }) {
 
   const handleCheckOutput = async (studentId) => {
     try {
-      const res = await axios.get(`${backendBase}/api/codeEval/${data.noteId}/${studentId}`);
+      const res = await API.get(`/api/codeEval/${data.noteId}/${studentId}`);
       setCheckOutputData({ ...res.data, studentId });
     } catch (err) {
       console.error("Failed to fetch submission", err);
@@ -44,7 +45,7 @@ export default function EvaluateCodeModal({ data, onClose, module }) {
         codingMark: mark,
       };
 
-      await axios.post(`${backendBase}/api/codeEval/save`, payload);
+      await API.post(`/api/codeEval/save`, payload);
       toast.success("Coding mark saved");
     } catch (err) {
       console.error("Error submitting code mark", err);
