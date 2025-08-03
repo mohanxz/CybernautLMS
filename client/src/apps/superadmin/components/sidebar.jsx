@@ -39,7 +39,7 @@ export default function Sidebar({ onHover, darkMode, setDarkMode, isSidebarOpen,
   useEffect(() => {
     const fetchSuperAdmin = async () => {
       try {
-        const res = await axios.get("http://localhost:5004/auth/superadmin/me", {
+        const res = await axios.get(`${import.meta.env.VITE_LOGIN_API}/auth/superadmin/me`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import API from "../api";
 import { toast } from 'react-toastify';
 
 const Settings = () => {
@@ -23,7 +24,7 @@ const Settings = () => {
     const fetchProfile = async () => {
       const token = localStorage.getItem("token");
       console.log("Token : "+token);
-      const res = await axios.get("http://localhost:5001/api/settings/me", {
+      const res = await API.get("/api/settings/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setDetails(res.data);
@@ -49,7 +50,7 @@ const Settings = () => {
     const token = localStorage.getItem("token");
     try {
       await axios.put(
-        "http://localhost:5004/auth/change-password",
+        `${import.meta.env.VITE_LOGIN_API}/auth/change-password`,
         passwordForm,
         {
           headers: { Authorization: `Bearer ${token}` },

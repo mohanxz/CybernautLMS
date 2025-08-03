@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import axios from 'axios';
+import API from '../api'; // Adjust the import based on your API setup
 
 export default function CourseCard({ image, name, startDate, batch, batchId, onClick }) {
   const [showModal, setShowModal] = useState(false);
@@ -17,8 +18,8 @@ export default function CourseCard({ image, name, startDate, batch, batchId, onC
     // check if batch is already completed for current admin
     const checkCompletionStatus = async () => {
       try {
-        const res = await axios.get(
-          `http://localhost:5002/api/admin-batches/check-complete/${batchId}`,
+        const res = await API.get(
+          `/api/admin-batches/check-complete/${batchId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setAlreadyCompleted(res.data.isCompleted);
@@ -33,8 +34,8 @@ export default function CourseCard({ image, name, startDate, batch, batchId, onC
 
   const handleMarkComplete = async () => {
     try {
-      const res = await axios.patch(
-        `http://localhost:5002/api/admin-batches/mark-complete/${batchId}`,
+      const res = await API.patch(
+        `/api/admin-batches/mark-complete/${batchId}`,
         {isCompleted: true },
         { headers: { Authorization: `Bearer ${token}` } }
       );

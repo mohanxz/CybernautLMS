@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import axios from "axios";
+import API from "../api"; // Adjust the import based on your API setup
 import { io } from "socket.io-client";
 import { useParams } from "react-router-dom";
 
@@ -37,8 +38,8 @@ export default function AdminChat() {
     const fetchMyBatch = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get(
-          "http://localhost:5002/api/admin-batches/my-batches",
+        const res = await API.get(
+          "/api/admin-batches/my-batches",
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -64,21 +65,24 @@ export default function AdminChat() {
   }, [batchId]);
 
   useEffect(() => {
-    if (!course || !batch || !sender) return;
-    const fetchStudents = async () => {
-      try {
-        const res = await axios.get(
-          `http://localhost:5006/students/${course}/${batch}/${encodeURIComponent(
-            sender.trim()
-          )}`
-        );
-        setStudents(res.data);
-      } catch (err) {
-        console.error("Error loading students", err);
-      }
-    };
-    fetchStudents();
-  }, [course, batch, sender]);
+  if (!course || !batch || !sender) return;
+
+  const fetchStudents = async () => {
+    try {
+      const res = await axios.get(
+        `${import.meta.env.VITE_CHAT_API}/students/${course}/${batch}/${encodeURIComponent(
+          sender.trim()
+        )}`
+      );
+      setStudents(res.data);
+    } catch (err) {
+      console.error("Error loading students", err);
+    }
+  };
+
+  fetchStudents();
+}, [course, batch, sender]);
+
 
   useEffect(() => {
     if (!room) return;

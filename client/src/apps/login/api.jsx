@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: 'http://localhost:5004', // your backend URL
+  baseURL: import.meta.env.VITE_LOGIN_API, // ✅ login backend URL via env
 });
 
 // Add token to headers
@@ -21,7 +21,7 @@ API.interceptors.response.use(
     if (err.response && [401, 403].includes(err.response.status)) {
       // Clear session and redirect to login
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      window.location.href = `${import.meta.env.VITE_FRONTEND_URL}/login`; // ✅ frontend redirect via env
     }
     return Promise.reject(err);
   }

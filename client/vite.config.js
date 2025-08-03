@@ -1,10 +1,11 @@
+// vite.config.js
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
-  base: "./", // ✅ relative paths for static assets in production
+  base: '/', // 🔁 better for SPAs and static deploys
   plugins: [
     react(),
     VitePWA({
@@ -48,7 +49,7 @@ export default defineConfig({
     port: 5173,
   },
   build: {
-    outDir: 'dist', // ✅ required for Vercel to find static output
+    outDir: 'dist',
     emptyOutDir: true,
   },
 });

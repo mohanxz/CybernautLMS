@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import API from "../api";
 import { FaPlus } from "react-icons/fa";
 import { toast, ToastContainer } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
@@ -63,7 +63,7 @@ const Courses = () => {
 
   const fetchCourses = async () => {
     try {
-      const res = await axios.get("http://localhost:5001/api/courses");
+      const res = await API.get("/api/courses");
       if (Array.isArray(res.data)) setCourses(res.data);
     } catch (err) {
       console.error("Error fetching courses:", err);
@@ -83,8 +83,8 @@ const Courses = () => {
     }
 
     const request = isEditing
-      ? axios.put(`http://localhost:5001/api/courses/${editCourseId}`, courseData)
-      : axios.post("http://localhost:5001/api/courses", courseData);
+      ? API.put(`/api/courses/${editCourseId}`, courseData)
+      : API.post("/api/courses", courseData);
 
     request
       .then(() => {
@@ -116,7 +116,7 @@ const Courses = () => {
 
   const handleDeleteCourse = (id) => {
     if (!window.confirm("Are you sure you want to delete this course?")) return;
-    axios.delete(`http://localhost:5001/api/courses/${id}`)
+    API.delete(`/api/courses/${id}`)
       .then(() => {
         fetchCourses();
         toast.success("Course deleted");

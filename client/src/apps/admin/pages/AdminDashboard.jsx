@@ -3,6 +3,7 @@ import FullStack from "../assets/FullStack.webp";
 import DataAnalytics from "../assets/DataAnalytics.webp";
 import TechTrio from "../assets/TechTrio.webp";
 import axios from "axios";
+import API from "../api"; // Adjust the import based on your API setup
 import {
   BarChart,
   Bar,
@@ -30,8 +31,8 @@ export default function AdminDashboard() {
   const token = localStorage.getItem("token");
 
   useEffect(() => {
-    axios
-      .get("http://localhost:5002/api/dashboard/lecturer", {
+    API
+      .get("/api/dashboard/lecturer", {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       })
@@ -59,9 +60,9 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (selectedBatchId && selectedModule && selectedType) {
-      axios
+      API
         .get(
-          `http://localhost:5002/statistics/marks?batchId=${selectedBatchId}&module=${selectedModule}&type=${selectedType}`,
+          `/statistics/marks?batchId=${selectedBatchId}&module=${selectedModule}&type=${selectedType}`,
           {
             headers: { Authorization: `Bearer ${token}` },
             withCredentials: true,

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-
+import API from "../api"; // Adjust the import based on your API setup
 export default function AdminLeaderboard() {
   const [batches, setBatches] = useState([]);
   const [selectedBatch, setSelectedBatch] = useState("");
@@ -12,8 +12,8 @@ export default function AdminLeaderboard() {
     "https://cdn-icons-png.flaticon.com/512/847/847969.png";
 
   useEffect(() => {
-    axios
-      .get("http://localhost:5002/api/dashboard/lecturer", {
+    API
+      .get("/api/dashboard/lecturer", {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       })
@@ -44,8 +44,8 @@ export default function AdminLeaderboard() {
   useEffect(() => {
     if (!selectedBatch || !selectedModule) return;
 
-    axios
-      .get("http://localhost:5002/statistics/leaderboard", {
+    API
+      .get("/statistics/leaderboard", {
         headers: { Authorization: `Bearer ${token}` },
         params: { batchId: selectedBatch, module: selectedModule },
         withCredentials: true,
