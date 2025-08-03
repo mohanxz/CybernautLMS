@@ -247,9 +247,10 @@ mongoose.connect(process.env.MONGO_URI)
     });
 
     // ✅ Start server after DB is connected
-    server.listen(PORT, () => {
-      console.log(`✅ Chat server listening on http://localhost:${PORT}`);
-    });
+    server.listen(PORT, '0.0.0.0', () => {
+  console.log(`✅ Chat server listening on http://localhost:${PORT}`);
+});
+
   })
   .catch((err) => {
     console.error('❌ MongoDB connection error:', err);
