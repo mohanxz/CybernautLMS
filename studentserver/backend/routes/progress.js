@@ -4,12 +4,13 @@ const Note = require('../models/Note');
 const Report = require('../models/Report');
 
 const router = express.Router();
+const verifyAccessToken = require('../middleware/auth');
 
 /**
  * GET /progress/:studentId
  * Returns percentage completion of coding, quiz, and assignment.
  */
-router.get('/:studentId', async (req, res) => {
+router.get('/:studentId', verifyAccessToken, async (req, res) => {
   const { studentId } = req.params;
   try {
     // Step 1: Find the student's batch

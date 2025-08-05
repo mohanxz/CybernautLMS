@@ -93,7 +93,10 @@ function StudentHome() {
     const fetchProgress = async () => {
       try {
         if (!student?._id) return;
-        const res = await API.get(`/api/progress/${student._id}`);
+        const token = localStorage.getItem('token');
+        const res = await API.get(`/api/progress/${student._id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
         setProgress(res.data);
       } catch (err) {
         console.error("Failed to fetch progress:", err);
@@ -103,7 +106,10 @@ function StudentHome() {
     const fetchReports = async () => {
       try {
         if (!student?._id) return;
-        const res = await API.get(`/api/reports/${student._id}`);
+        const token = localStorage.getItem('token');
+        const res = await API.get(`/api/reports/${student._id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
         setReports(res.data);
       } catch (err) {
         console.error("Failed to fetch reports:", err);

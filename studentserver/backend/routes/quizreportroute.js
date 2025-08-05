@@ -1,13 +1,13 @@
 // routes/quizreports.js
 const router = require('express').Router();
-const Verify = require('../middleware/auth');
+const verifyAccessToken = require('../middleware/auth');
 const Report = require('../models/Report');
 const Quiz = require('../models/Quiz');
 const Note = require('../models/Note');
 const Student = require('../models/Student');
 const BatchEvaluation = require('../models/BatchEvaluation');
 // GET /api/quizreports/quiz-attempts — list all quiz attempts for student
-router.get('/quiz-attempts', Verify, async (req, res) => {
+router.get('/quiz-attempts', verifyAccessToken, async (req, res) => {
   try {
     const student = await Student.findOne({ user: req.user.id }).lean();
     if (!student) return res.status(403).json({ message: "Student not found" });
@@ -51,7 +51,7 @@ router.get('/quiz-attempts', Verify, async (req, res) => {
 });
 
 
-router.get('/quiz-detail/:noteId', Verify, async (req, res) => {
+router.get('/quiz-detail/:noteId', verifyAccessToken, async (req, res) => {
   try {
     const note = await Note.findById(req.params.noteId).lean();
     if (!note) return res.status(404).json({ message: "Note not found" });

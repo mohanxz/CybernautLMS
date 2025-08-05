@@ -2,9 +2,9 @@ const express = require('express');
 const router = express.Router();
 const Student = require('../models/Student');
 const User = require('../models/User');
-const authenticate = require('../middleware/auth');
+const verifyAccessToken = require('../middleware/auth');
 
-router.get('/me', authenticate, async (req, res) => {
+router.get('/me', verifyAccessToken, async (req, res) => {
   try {
     const student = await Student.findOne({ user: req.user.id }).populate("user", "name email");
     if (!student) return res.status(404).json({ message: "Student not found" });

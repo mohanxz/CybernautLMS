@@ -84,7 +84,11 @@ export default function LessonPlan() {
 
   const openEvalModal = async (note) => {
     try {
-      const res = await API.get(`/evaluate/${batchId}/${selectedModule}/${note.title}/${note.day}`);
+      const res = await API.get(`/evaluate/${batchId}/${selectedModule}/${note.title}/${note.day}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       setEvalData({ title: note.title, day: note.day, submissions: res.data });
       setShowEvalModal(true);
     } catch (err) {
@@ -94,7 +98,11 @@ export default function LessonPlan() {
 
   const openCodeEvalModal = async (noteId) => {
     try {
-      const res = await API.get(`/api/codeEval/${noteId}`);
+      const res = await API.get(`/api/codeEval/${noteId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       setCodeEvalData({
         noteId: noteId,
         submissions: res.data,
@@ -176,8 +184,14 @@ export default function LessonPlan() {
         module: selectedModule,
         day: evalData.day,
         mark
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-      const res = await API.get(`/evaluate/${batchId}/${selectedModule}/${evalData.title}/${evalData.day}`);
+      const res = await API.get(`/evaluate/${batchId}/${selectedModule}/${evalData.title}/${evalData.day}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       setEvalData(prev => ({ ...prev, submissions: res.data }));
     } catch (err) {
       console.error("Error submitting marks", err);

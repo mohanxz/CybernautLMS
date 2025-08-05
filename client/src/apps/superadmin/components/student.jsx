@@ -113,7 +113,10 @@ const Student = () => {
     setError(null);
     // Add a small delay to show loading animation
     await new Promise(resolve => setTimeout(resolve, 800));
-    const res = await API.get("/api/students");
+    const token = localStorage.getItem("token");
+    const res = await API.get("/api/students", {
+      headers: { Authorization: `Bearer ${token}` }
+    });
     const studentList = res.data;
 
     setStudents(studentList);

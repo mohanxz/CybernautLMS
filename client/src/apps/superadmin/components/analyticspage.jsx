@@ -19,11 +19,12 @@ export default function AnalyticsPage() {
   const profilePic = "https://cdn-icons-png.flaticon.com/512/847/847969.png";
 
   useEffect(() => {
-    API.get("/api/stats")
+    const token = localStorage.getItem('token');
+    API.get("/api/stats", { headers: { Authorization: `Bearer ${token}` } })
       .then(res => setStats(res.data))
       .catch(err => console.error("Stats fetch error:", err));
 
-    API.get("/api/courses/names")
+    API.get("/api/courses/names", { headers: { Authorization: `Bearer ${token}` } })
       .then(res => {
         setCourses(res.data);
         if (res.data.length > 0) setCourse(res.data[0]);
@@ -33,7 +34,8 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     if (!course) return;
-    API.get(`/api/tests/top/${course}`)
+    const token = localStorage.getItem('token');
+    API.get(`/api/tests/top/${course}`, { headers: { Authorization: `Bearer ${token}` } })
       .then(res => {
         const formatted = res.data.map(item => ({
           studentName: item.studentName,

@@ -12,7 +12,12 @@ export default function TopPerformers() {
 
   const fetchData = async () => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_LOGIN_API}/api/tests/top/${course}`);
+      const token = localStorage.getItem("token");
+      const res = await axios.get(`${import.meta.env.VITE_LOGIN_API}/api/tests/top/${course}`,
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
       const formattedData = res.data.map(item => ({
         studentName: item.studentName,
         quizAvg: item.quizAvg,

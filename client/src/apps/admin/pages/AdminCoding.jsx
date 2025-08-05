@@ -52,7 +52,9 @@ export default function AdminCoding() {
     const map = {};
     for (let note of noteList) {
       try {
-        const { data } = await API.get(`/api/coding-questions/by-note/${note._id}`);
+        const { data } = await API.get(`/api/coding-questions/by-note/${note._id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         map[note._id] = data;
       } catch {}
     }
@@ -151,8 +153,12 @@ export default function AdminCoding() {
     };
 
     try {
-      await API[method](endpoint, payload);
-      const { data } = await API.get(`/api/coding-questions/by-note/${selectedNote}`);
+      await API[method](endpoint, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const { data } = await API.get(`/api/coding-questions/by-note/${selectedNote}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setCodingMap((prev) => ({ ...prev, [selectedNote]: data }));
       closeModal();
     } catch (err) {

@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const Note = require('../models/Note');
+const verifyAccessToken = require('../middleware/auth');
 
 
-router.get('/:batchId/:module', async (req, res) => {
+router.get('/:batchId/:module', verifyAccessToken, async (req, res) => {
   const { batchId, module } = req.params;
 
   try {

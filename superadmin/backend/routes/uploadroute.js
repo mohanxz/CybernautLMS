@@ -3,6 +3,7 @@ const multer = require('multer');
 const ExcelJS = require('exceljs');
 
 const router = express.Router();
+const verifyAccessToken = require('../middleware/auth');
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
@@ -15,7 +16,7 @@ function excelDateToJSDate(serial) {
   return date;
 }
 
-router.post('/upload', upload.single('file'), async (req, res) => {
+router.post('/upload', verifyAccessToken, upload.single('file'), async (req, res) => {
   try {
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(req.file.buffer);

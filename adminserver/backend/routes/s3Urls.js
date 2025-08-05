@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
+const verifyAccessToken = require('../middleware/auth');
 
-router.get('/s3-answers', async (req, res) => {
+router.get('/s3-answers', verifyAccessToken, async (req, res) => {
   const { batchName, studentName, rollNo , module} = req.query;
 
   if (!batchName || !studentName || !rollNo) {

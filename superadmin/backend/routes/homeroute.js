@@ -5,8 +5,9 @@ const Batch = require('../models/Batch');
 const Course = require('../models/Course');
 
 const router = express.Router();
+const verifyAccessToken = require('../middleware/auth');
 
-router.get('/', async (req, res) => {
+router.get('/', verifyAccessToken, async (req, res) => {
   try {
     const course = await Course.find();
     const batch = await Batch.find();

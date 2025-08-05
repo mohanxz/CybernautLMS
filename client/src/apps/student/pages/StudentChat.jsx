@@ -26,7 +26,9 @@ export default function StudentChat() {
         setSender(studentRes.data.user.name);
 
         const batchId = new URLSearchParams(window.location.search).get("batch");
-        const batchRes = await API.get(`/student/batch/by-id/${batchId}`);
+        const batchRes = await API.get(`/student/batch/by-id/${batchId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         setBatchInfo(batchRes.data);
         setActiveChat({ type: "forum" });
       } catch (err) {

@@ -3,9 +3,9 @@ const router = express.Router();
 const Note = require('../models/Note');
 const Student = require('../models/Student');
 const Report = require('../models/Report');
-const protect = require('../middleware/auth');
+const verifyAccessToken = require('../middleware/auth');
 // ✅ GET notes by batch and module
-router.get('/:batchId/:module', async (req, res) => {
+router.get('/:batchId/:module', verifyAccessToken, async (req, res) => {
   const { batchId, module } = req.params;
 
   try {
@@ -18,7 +18,7 @@ router.get('/:batchId/:module', async (req, res) => {
 
 
 // ✅ POST new note AND create default reports
-router.post('/', async (req, res) => {
+router.post('/', verifyAccessToken, async (req, res) => {
   const {
     title,
     meetlink,
@@ -73,7 +73,7 @@ router.post('/', async (req, res) => {
 
 
 // ✅ PUT to edit note
-router.put('/:id', async (req, res) => {
+router.put('/:id', verifyAccessToken, async (req, res) => {
   const {
     title,
     meetlink,
@@ -109,7 +109,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Route to fetch all notes created by the logged-in admin
-router.get('/my-notes', protect , async (req, res) => {
+router.get('/my-notes', verifyAccessToken, async (req, res) => {
   try {
     // Replace this with req.user._id if using auth middleware
     const adminId = req.user.id;

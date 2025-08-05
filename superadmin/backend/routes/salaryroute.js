@@ -4,6 +4,7 @@ const Admin = require('../models/Admin');
 require('dotenv').config();
 const axios = require('axios');
 const router = express.Router();
+const verifyAccessToken = require('../middleware/auth');
 const generateReceiptPDF = require('../utils/generateReceipt');
 const sendReceiptEmail = require('../utils/sendEmail');
 // Initialize Razorpay
@@ -12,7 +13,7 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-router.get('/', async (req, res) => {
+router.get('/', verifyAccessToken, async (req, res) => {
   try {
     const admins = await Admin.find().populate('user', 'name'); // Get admin.user.name
     res.json(admins);
@@ -22,7 +23,7 @@ router.get('/', async (req, res) => {
 });
 
 // POST /api/salary/admins/:id/pay - create Razorpay order and mark as paid
-router.post('/:id/pay', async (req, res) => {
+router.post('/:id/pay', verifyAccessToken, async (req, res) => {
   try {
     const admin = await Admin.findById(req.params.id);
     if (!admin) return res.status(404).json({ error: 'Admin not found' });
@@ -54,7 +55,7 @@ router.post('/:id/pay', async (req, res) => {
 
 // OPTIONAL: POST /api/salary/admins/:id/verify - verify payment after frontend checkout
 
-router.post('/:id/verify', async (req, res) => {
+router.post('/:id/verify', verifyAccessToken, async (req, res) => {
   const { paymentId, orderId, signature } = req.body;
 
   try {
@@ -85,7 +86,7 @@ router.post('/:id/verify', async (req, res) => {
 });
 
 
-router.post("/:adminId/invoice", async (req, res) => {
+router.post("/:adminId/invoice", verifyAccessToken, async (req, res) => {
   const { adminName, email, amount } = req.body;
 
   try {
@@ -124,7 +125,7 @@ router.post("/:adminId/invoice", async (req, res) => {
 });
 
 // GET /api/salary/invoice/:invoiceId
-router.get("/invoice/:invoiceId", async (req, res) => {
+router.get("/invoice/:invoiceId", verifyAccessToken, async (req, res) => {
   try {
     const invoice = await razorpay.invoices.fetch(req.params.invoiceId);
     res.redirect(invoice.short_url);
@@ -134,7 +135,7 @@ router.get("/invoice/:invoiceId", async (req, res) => {
   }
 });
 
-router.get('/stats/payments', async (req, res) => {
+router.get('/stats/payments', verifyAccessToken, async (req, res) => {
   try {
     const payments = await razorpay.payments.all({ count: 100 });
     const currmonth = new Date().getMonth();
@@ -155,7 +156,7 @@ router.get('/stats/payments', async (req, res) => {
   }
 });
 
-router.get('/recent-transactions', async (req, res) => {
+router.get('/recent-transactions', verifyAccessToken, async (req, res) => {
   const count = parseInt(req.query.count) || 5;
   try {
     const transactions = await razorpay.payments.all({ count });

@@ -2,9 +2,10 @@ const express = require('express');
 const router = express.Router();
 const BatchEvaluation = require('../models/BatchEvaluation');
 const Student = require('../models/Student');
+const verifyAccessToken = require('../middleware/auth');
 
 // Get final assignment questions for a batch + module
-router.get('/:batchId/:module', async (req, res) => {
+router.get('/:batchId/:module', verifyAccessToken, async (req, res) => {
   const { batchId, module } = req.params;
   try {
     const evalDoc = await BatchEvaluation.findOne({ batch: batchId, module });
@@ -16,7 +17,7 @@ router.get('/:batchId/:module', async (req, res) => {
 });
 
 // Add or overwrite questions for final assignment
-router.post('/:batchId/:module', async (req, res) => {
+router.post('/:batchId/:module', verifyAccessToken, async (req, res) => {
   const { batchId, module } = req.params;
   const { questions } = req.body;
   try {

@@ -27,7 +27,8 @@ const Courses = () => {
   }, []);
 
   const fetchCourses = () => {
-    API.get("/api/courses")
+    const token = localStorage.getItem('token');
+    API.get("/api/courses", { headers: { Authorization: `Bearer ${token}` } })
       .then((res) => {
         if (Array.isArray(res.data)) setCourses(res.data);
       })
@@ -45,9 +46,10 @@ const Courses = () => {
       return;
     }
 
+    const token = localStorage.getItem('token');
     const request = isEditing
-      ? API.put(`/api/courses/${editCourseId}`, courseData)
-      : API.post("/api/courses", courseData);
+      ? API.put(`/api/courses/${editCourseId}`, courseData, { headers: { Authorization: `Bearer ${token}` } })
+      : API.post("/api/courses", courseData, { headers: { Authorization: `Bearer ${token}` } });
 
     request
       .then(() => {
@@ -79,7 +81,8 @@ const Courses = () => {
 
   const handleDeleteCourse = (id) => {
     if (!window.confirm("Are you sure you want to delete this course?")) return;
-    API.delete(`/api/courses/${id}`)
+    const token = localStorage.getItem('token');
+    API.delete(`/api/courses/${id}`, { headers: { Authorization: `Bearer ${token}` } })
       .then(() => {
         fetchCourses();
         toast.success("Course deleted");

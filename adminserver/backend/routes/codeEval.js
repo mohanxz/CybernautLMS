@@ -1,6 +1,6 @@
 const express = require("express");
 const axios = require("axios");
-const auth = require("../middleware/auth");
+const verifyAccessToken = require("../middleware/auth");
 const CodingQuestion = require("../models/Code");
 const CodeSubmission = require("../models/CodeSubmission");
 const Student = require("../models/Student");
@@ -11,7 +11,7 @@ const router = express.Router();
 // Replace with your actual EC2 IP
 const JUDGE0_URL = "http://13.50.13.88:2358";
 
-router.post("/run", async (req, res) => {
+router.post("/run", verifyAccessToken, async (req, res) => {
   const { source_code, language_id, stdin } = req.body;
 
   try {
@@ -29,7 +29,7 @@ router.post("/run", async (req, res) => {
 });
 
 // GET /api/codeEval/:noteId/:studentId
-router.get("/:noteId/:studentId", async (req, res) => {
+router.get("/:noteId/:studentId", verifyAccessToken, async (req, res) => {
   const { noteId, studentId } = req.params;
 
   try {
@@ -50,7 +50,7 @@ router.get("/:noteId/:studentId", async (req, res) => {
 });
 
 
-router.get("/:noteId", async (req, res) => {
+router.get("/:noteId", verifyAccessToken, async (req, res) => {
   try {
     const { noteId } = req.params;
 
@@ -104,7 +104,7 @@ router.get("/:noteId", async (req, res) => {
   }
 });
 
-router.post('/save', async (req, res) => {
+router.post('/save', verifyAccessToken, async (req, res) => {
   const { studentId, noteId, module, codingMark } = req.body;
 
   try {

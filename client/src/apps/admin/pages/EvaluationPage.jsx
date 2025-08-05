@@ -8,11 +8,16 @@ export default function EvaluateSubmissions() {
   const [submissions, setSubmissions] = useState([]);
   const [marks, setMarks] = useState({});
   const [loading, setLoading] = useState(true);
+  const token = localStorage.getItem("token");
   
 
   const fetchSubmissions = async () => {
     try {
-      const res = await API.get(`/evaluate/${batch}/${module}/${title}/${day}`);
+      const res = await API.get(`/evaluate/${batch}/${module}/${title}/${day}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       setSubmissions(res.data);
     } catch (err) {
       console.error('Failed to load submissions:', err);
@@ -43,6 +48,8 @@ export default function EvaluateSubmissions() {
         module,
         day,
         mark,
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
       });
       fetchSubmissions();
     } catch (err) {

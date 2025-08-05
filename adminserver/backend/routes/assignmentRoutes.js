@@ -5,6 +5,7 @@ const fs = require('fs');
 const multer = require('multer');
 const { S3Client, PutObjectCommand, ListObjectsV2Command } = require('@aws-sdk/client-s3');
 const Result = require('../models/Result');
+const verifyAccessToken = require('../middleware/auth');
 
 // S3 Config
 const s3 = new S3Client({
@@ -37,7 +38,7 @@ const assignmentUpload = multer({ storage: assignmentStorage });
 // ===============================
 // 📤 Upload Assignment (Local + S3)
 // ===============================
-router.post('/upload-assignment', assignmentUpload.single('file'), async (req, res) => {
+router.post('/upload-assignment',verifyAccessToken, assignmentUpload.single('file'), async (req, res) => {
   const { batch, module, title } = req.query;
 
   if (!req.file || !batch || !module || !title) {
@@ -72,7 +73,7 @@ router.post('/upload-assignment', assignmentUpload.single('file'), async (req, r
 // ===============================
 // 📤 Upload Student Answer to S3
 // ===============================
-router.post('/notes/upload/:batch/:module/:title/:student', upload.single('file'), async (req, res) => {
+router.post('/notes/upload/:batch/:module/:title/:student',verifyAccessToken, upload.single('file'), async (req, res) => {
   const { batch, module, title, student } = req.params;
 
   if (!req.file) return res.status(400).json({ error: 'No file' });
@@ -98,7 +99,7 @@ router.post('/notes/upload/:batch/:module/:title/:student', upload.single('file'
 // ===============================
 // 📄 Evaluate Pending Answers
 // ===============================
-router.get('/evaluate/:batch/:module/:title', async (req, res) => {
+router.get('/evaluate/:batch/:module/:title',verifyAccessToken, async (req, res) => {
   const { batch, module, title } = req.params;
   const prefix = `${batch}/${module}/${title}/assignment/`;
 
@@ -140,7 +141,7 @@ router.get('/evaluate/:batch/:module/:title', async (req, res) => {
 // ===============================
 // ✅ Save Mark for Student Answer
 // ===============================
-router.post('/mark', async (req, res) => {
+router.post('/mark',verifyAccessToken, async (req, res) => {
   const { batch, module, notetitle, student, mark, type } = req.body;
   try {
     await Result.create({ batch, module, notetitle, student, mark, type });

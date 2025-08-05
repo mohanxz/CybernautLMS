@@ -60,6 +60,7 @@ const BatchEvaluation = () => {
           rollNo: student.rollNo,
           module: selectedModule,
         },
+        headers: { Authorization: `Bearer ${token}` },
       });
       return { projectAnswerUrl: res.data.projectAnswerUrl };
     } catch {
@@ -117,7 +118,10 @@ const BatchEvaluation = () => {
         `/upload-project?batch=${batchId}&title=${selectedModule}`,
         formDataUpload,
         {
-          headers: { "Content-Type": "multipart/form-data" },
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
 
@@ -126,6 +130,8 @@ const BatchEvaluation = () => {
 
       await API.put(`/api/batch-evaluation/${evaluation._id}`, {
         projectS3Url: s3path,
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       toast.success("Project uploaded");
@@ -142,6 +148,8 @@ const BatchEvaluation = () => {
           student: s.student._id,
           projectMarks: s.projectMarks,
         })),
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
       });
       toast.success("Saved");
       setEditMode(false);

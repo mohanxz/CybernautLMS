@@ -2,9 +2,10 @@ const express = require("express");
 const router = express.Router();
 const os = require("os");
 const User = require("../models/User");
+const verifyAccessToken = require('../middleware/auth');
 
 // GET /api/system/overview
-router.get("/overview", async (req, res) => {
+router.get("/overview", verifyAccessToken, async (req, res) => {
   try {
     // DB check
     let dbHealth = "unhealthy";

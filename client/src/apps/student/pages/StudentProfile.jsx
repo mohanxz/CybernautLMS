@@ -18,10 +18,17 @@ function StudentProfile() {
 
   const changePassword = async () => {
     try {
-      await axios.post(`${import.meta.env.VITE_LOGIN_API}/auth/change-password`, {
-        username: userData.username,
-        newPassword,
-      });
+      const token = localStorage.getItem('token');
+      await axios.post(
+        `${import.meta.env.VITE_LOGIN_API}/auth/change-password`,
+        {
+          username: userData.username,
+          newPassword,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       alert('Password changed successfully');
     } catch {
       alert('Failed to change password');

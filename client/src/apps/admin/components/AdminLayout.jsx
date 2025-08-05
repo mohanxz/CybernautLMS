@@ -23,7 +23,10 @@ const AdminLayout = ({ children }) => {
   useEffect(() => {
     const fetchBatchDetails = async () => {
       try {
-        const res = await API.get(`/admin-batches/${batchId}`);
+        const token = localStorage.getItem("token");
+        const res = await API.get(`/admin-batches/${batchId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         setBatchInfo(res.data);
       } catch (err) {
         console.error("Error fetching batch details:", err);

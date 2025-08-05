@@ -17,7 +17,9 @@ export default function EvaluateCodeModal({ data, onClose, module }) {
 
   const handleCheckOutput = async (studentId) => {
     try {
-      const res = await API.get(`/api/codeEval/${data.noteId}/${studentId}`);
+      const token = localStorage.getItem("token");
+      const res = await API.get(`/api/codeEval/${data.noteId}/${studentId}`,
+        { headers: { Authorization: `Bearer ${token}` } });
       setCheckOutputData({ ...res.data, studentId });
     } catch (err) {
       console.error("Failed to fetch submission", err);
@@ -38,6 +40,7 @@ export default function EvaluateCodeModal({ data, onClose, module }) {
     setSubmittingStudentId(studentId);
 
     try {
+      const token = localStorage.getItem("token");
       const payload = {
         studentId,
         noteId: data.noteId,
@@ -45,7 +48,9 @@ export default function EvaluateCodeModal({ data, onClose, module }) {
         codingMark: mark,
       };
 
-      await API.post(`/api/codeEval/save`, payload);
+      await API.post(`/api/codeEval/save`, payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       toast.success("Coding mark saved");
     } catch (err) {
       console.error("Error submitting code mark", err);

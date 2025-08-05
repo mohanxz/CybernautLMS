@@ -38,12 +38,12 @@ export default function AdminChat() {
     const fetchMyBatch = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await API.get(
-          "/api/admin-batches/my-batches",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+      const res = await API.get(
+        "/api/admin-batches/my-batches",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
         const myId = JSON.parse(atob(token.split(".")[1])).id;
         const matchingBatch = res.data.find((b) => b._id === batchId);
@@ -69,10 +69,14 @@ export default function AdminChat() {
 
   const fetchStudents = async () => {
     try {
+      const token = localStorage.getItem("token");
       const res = await axios.get(
         `${import.meta.env.VITE_CHAT_API}/students/${course}/${batch}/${encodeURIComponent(
           sender.trim()
-        )}`
+        )}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
       setStudents(res.data);
     } catch (err) {
