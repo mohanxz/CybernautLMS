@@ -2,11 +2,12 @@ const express = require('express');
 const User = require("../models/User");
 const Student = require('../models/Student');
 const router = express.Router();
+const verifyAccessToken = require('../middleware/auth');
 const Report = require('../models/Report');
 const Batch = require('../models/Batch');
 const Course = require('../models/Course'); // Assuming it exists
 
-router.post('/save', async (req, res) => {
+router.post('/save', verifyAccessToken, async (req, res) => {
   const { studentId, course, quiz, assignment, code } = req.body;
 
   try {
@@ -37,7 +38,7 @@ router.post('/save', async (req, res) => {
 
 
 
-router.get('/top/:course', async (req, res) => {
+router.get('/top/:course', verifyAccessToken, async (req, res) => {
   try {
     const courseName = decodeURIComponent(req.params.course);
     

@@ -51,7 +51,10 @@ export default function Admins() {
 
   const fetchModules = async () => {
   try {
-    const res = await api.get('/api/courses/modules');
+    const token = localStorage.getItem('token');
+    const res = await api.get('/api/courses/modules', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
     setModules(res.data); // ['Python', 'AI', 'Data Structures', ...]
   } catch (err) {
     toast.error("Failed to load modules");
@@ -60,7 +63,10 @@ export default function Admins() {
 
 
   const fetchAdmins = async () => {
-    const res = await api.get('/api/admins');
+    const token = localStorage.getItem('token');
+    const res = await api.get('/api/admins', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
     setAdmins(res.data);
   };
 
@@ -71,7 +77,10 @@ export default function Admins() {
 
 const handleDeleteConfirmed = async () => {
   try {
-    await api.delete(`/api/admins/${adminToDelete}`);
+    const token = localStorage.getItem('token');
+    await api.delete(`/api/admins/${adminToDelete}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
     toast.success("Lecturer deleted successfully");
     setDeleteModalOpen(false);
     setAdminToDelete(null);
@@ -102,10 +111,16 @@ const handleCancelDelete = () => {
 
   try {
     if (isEditing) {
-      await api.put(`/api/admins/${editingId}`, payload);
+      const token = localStorage.getItem('token');
+      await api.put(`/api/admins/${editingId}`, payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       alert("Lecturer updated.");
     } else {
-      const res = await api.post('/api/admins', payload);
+      const token = localStorage.getItem('token');
+      const res = await api.post('/api/admins', payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setGeneratedPassword(res.data.generatedPassword);
       alert(`Lecturer added. Temporary password: ${res.data.generatedPassword}`);
     }

@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const Report = require('../models/Report');
+const verifyAccessToken = require('../middleware/auth');
 
 // Fetch all reports for a student
-router.get('/:studentId', async (req, res) => {
+router.get('/:studentId', verifyAccessToken, async (req, res) => {
   try {
     const reports = await Report.find({ student: req.params.studentId });
     res.json(reports);
@@ -14,7 +15,7 @@ router.get('/:studentId', async (req, res) => {
 });
 
 // (Optional) Fetch the latest report for each module of a student
-router.get('/latest/:studentId', async (req, res) => {
+router.get('/latest/:studentId', verifyAccessToken, async (req, res) => {
   try {
     const allReports = await Report.find({ student: req.params.studentId }).sort({ day: -1 });
 

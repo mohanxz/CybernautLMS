@@ -3,9 +3,10 @@ const router = express.Router();
 const Batch = require('../models/Batch');
 const Course = require('../models/Course');
 const Student = require('../models/Student');
+const verifyAccessToken = require('../middleware/auth');
 
 // GET all batches with course name, admin names, and student count
-router.get('/', async (req, res) => {
+router.get('/', verifyAccessToken, async (req, res) => {
   try {
     const batches = await Batch.find()
       .populate('course', 'courseName')     // Only get course name
@@ -29,7 +30,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', verifyAccessToken, async (req, res) => {
   try {
     const { batchName, course, startDate, admins } = req.body;
 
@@ -47,7 +48,7 @@ router.post('/', async (req, res) => {
 });
 
 // Count existing batches by course & month & year (for generating batchName)
-router.get("/count", async (req, res) => {
+router.get("/count", verifyAccessToken, async (req, res) => {
   try {
     const { courseId, month, year } = req.query;
 

@@ -20,7 +20,10 @@ const CertificatePage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await API.get('/api/certificates/eligible');
+        const token = localStorage.getItem('token');
+        const res = await API.get('/api/certificates/eligible', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         setData(res.data);
         console.log("Fetched data:", res.data);
 
@@ -55,7 +58,10 @@ const CertificatePage = () => {
     }
     setLoading(true);
     try {
-      await API.post('/api/superadmin/generate', { students: selected });
+      const token = localStorage.getItem('token');
+      await API.post('/api/superadmin/generate', { students: selected }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       toast.success('Certificates generated!');
       setSelected([]);
     } catch (err) {

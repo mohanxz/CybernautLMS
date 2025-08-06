@@ -7,6 +7,7 @@ const { Parser } = require('json2csv');
 const nodemailer = require("nodemailer");
 
 const router = express.Router();
+const verifyAccessToken = require('../middleware/auth');
 
 function sanitizeCell(value) {
   if (value && typeof value === "object") {
@@ -24,7 +25,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-router.post("/save-selected", async (req, res) => {
+router.post("/save-selected", verifyAccessToken, async (req, res) => {
   const selectedStudents = req.body;
   const credentials = [];
 
@@ -106,7 +107,7 @@ router.post("/save-selected", async (req, res) => {
 });
 
 // Generate CSV
-router.post('/download-credentials', (req, res) => {
+router.post('/download-credentials', verifyAccessToken, (req, res) => {
   const credentials = req.body;
 
   try {
@@ -121,7 +122,7 @@ router.post('/download-credentials', (req, res) => {
 });
 
 // Get all students
-router.get('/', async (req, res) => {
+router.get('/', verifyAccessToken, async (req, res) => {
   try {
     const students = await Student.find()
       .populate({
@@ -165,7 +166,7 @@ router.get('/', async (req, res) => {
 
 
 // Get students by batch
-router.get('/batch/:batch', async (req, res) => {
+router.get('/batch/:batch', verifyAccessToken, async (req, res) => {
   try {
     const { batch } = req.params;
     const students = await Student.find({ batch }).populate('user');

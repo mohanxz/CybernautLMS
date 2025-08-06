@@ -23,7 +23,9 @@ export default function AdminHome() {
   const fetchBatches = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await API.get("/api/admin-batches/my-batches");
+      const res = await API.get("/api/admin-batches/my-batches", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setBatches(res.data);
     } catch (err) {
       console.error("Error fetching batches", err);

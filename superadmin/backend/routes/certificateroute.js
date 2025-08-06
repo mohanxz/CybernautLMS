@@ -33,64 +33,81 @@ router.get('/eligible', async (req, res) => {
       for (let student of students) {
         const reports = await Report.find({ student: student._id });
 
-        const studentEval = evaluation?.studentMarks.find(
-          sm => sm.student.toString() === student._id.toString()
-        );
+        const studentEvalEntries = evaluation?.studentMarks.filter(
+  sm => sm.student.toString() === student._id.toString()
+);
 
-        const studentData = {
-          _id: student._id,
-          user: student.user,
-          batch: student.batch,
-          phone: student.phone,
-          address: student.address,
-          dob: student.dob,
-          rollNo: student.rollNo,
-          marks: {
-            codingTotal: 0,
-            quizTotal: 0,
-            assignmentTotal: 0,
-            projectMarks: -1,
-            theoryMarks: -1,
-            finalScore: 0
-          },
-          status: "Ineligible"
-        };
+const studentData = {
+  _id: student._id,
+  user: student.user,
+  batch: student.batch,
+  phone: student.phone,
+  address: student.address,
+  dob: student.dob,
+  rollNo: student.rollNo,
+  marks: {
+    codingTotal: 0,
+    quizTotal: 0,
+    assignmentTotal: 0,
+    projectMarks: -1,
+    theoryMarks: -1,
+    finalScore: 0
+  },
+  status: "Ineligible"
+};
 
-        if (!studentEval || reports.length === 0 || studentEval.projectMarks < 0 || studentEval.theoryMarks < 0) {
-          ineligible.push({ ...studentData, reason: 'Missing or invalid evaluation data' });
-          continue;
-        }
+let codingTotal = 0, quizTotal = 0, assignmentTotal = 0;
 
-        let codingTotal = 0, quizTotal = 0, assignmentTotal = 0;
+reports.forEach(r => {
+  const [coding, quiz, assignment] = r.marksObtained;
+  if (coding >= 0) codingTotal += coding;
+  if (quiz >= 0) quizTotal += quiz;
+  if (assignment >= 0) assignmentTotal += assignment;
+});
 
-        reports.forEach(r => {
-          const [coding, quiz, assignment] = r.marksObtained;
-          if (coding >= 0) codingTotal += coding;
-          if (quiz >= 0) quizTotal += quiz;
-          if (assignment >= 0) assignmentTotal += assignment;
-        });
+const totalMarks = codingTotal + quizTotal + assignmentTotal;
+const normalizedScore = (totalMarks / 350) * 50;
 
-        const totalMarks = codingTotal + quizTotal + assignmentTotal;
-        const normalizedScore = (totalMarks / 350) * 50;
-        const projectOutOf50 = (studentEval.projectMarks / 100) * 50;
-        const theoryOutOf50 = (studentEval.theoryMarks / 100) * 50;
-        const finalScore = +(normalizedScore + projectOutOf50 + theoryOutOf50).toFixed(2);
+if (!studentEvalEntries || studentEvalEntries.length === 0 || reports.length === 0) {
+  ineligible.push({ ...studentData, reason: 'Missing evaluation data' });
+  continue;
+}
 
-        studentData.marks = {
-          codingTotal,
-          quizTotal,
-          assignmentTotal,
-          projectMarks: studentEval.projectMarks,
-          theoryMarks: studentEval.theoryMarks,
-          finalScore
-        };
+let totalProject = 0, totalTheory = 0;
+let isValid = true;
 
-        if (finalScore >= 50) {
-          studentData.status = "Eligible";
-          eligible.push(studentData);
-        } else {
-          ineligible.push({ ...studentData, reason: 'Final score < 50' });
-        }
+for (let entry of studentEvalEntries) {
+  if (entry.projectMarks < 0 || entry.theoryMarks < 0) {
+    isValid = false;
+    break;
+  }
+  totalProject += (entry.projectMarks / 100) * 50;
+  totalTheory += (entry.theoryMarks / 100) * 50;
+}
+
+if (!isValid) {
+  ineligible.push({ ...studentData, reason: 'Missing or invalid project/theory marks' });
+  continue;
+}
+
+const finalScore = +(normalizedScore + totalProject + totalTheory).toFixed(2);
+
+studentData.marks = {
+  codingTotal,
+  quizTotal,
+  assignmentTotal,
+  projectMarks: +totalProject.toFixed(2),
+  theoryMarks: +totalTheory.toFixed(2),
+  finalScore
+};
+
+if (finalScore >= 50) {
+  studentData.status = "Eligible";
+  eligible.push(studentData);
+} else {
+  ineligible.push({ ...studentData, reason: 'Final score < 50' });
+}
+
       }
 
       eligible.sort((a, b) => b.marks.finalScore - a.marks.finalScore);

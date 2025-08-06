@@ -1,8 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const axios = require("axios");
+const verifyAccessToken = require("../middleware/auth");
 
-router.post("/check-submissions", async (req, res) => {
+router.post("/check-submissions", verifyAccessToken, async (req, res) => {
   const { batchName, studentName, rollNo, modules } = req.body;
 
   if (!batchName || !studentName || !rollNo || !modules || !Array.isArray(modules)) {

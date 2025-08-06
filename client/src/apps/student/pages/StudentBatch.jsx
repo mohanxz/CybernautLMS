@@ -122,7 +122,9 @@ export default function StudentBatch() {
         for (const module in allNotes) {
           for (const note of [...allNotes[module].today, ...allNotes[module].others]) {
             try {
-              const res = await api.get(`/api/coding-question/by-note/${note._id}`);
+              const res = await api.get(`/api/coding-question/by-note/${note._id}`, {
+                headers: { Authorization: `Bearer ${token}` },
+              });
               if (res.data?._id) {
                 const codingQuestion = res.data;
 

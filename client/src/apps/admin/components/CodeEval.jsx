@@ -29,7 +29,9 @@ const CodeEval = ({ noteId, sourceCode: initialCode = "", languageId, onClose })
   useEffect(() => {
     const fetchQuestion = async () => {
       try {
-        const res = await API.get(`/api/coding-questions/by-note/${noteId}`);
+        const token = localStorage.getItem("token");
+        const res = await API.get(`/api/coding-questions/by-note/${noteId}`,
+          { headers: { Authorization: `Bearer ${token}` } });
         const question = res.data[0];
 
         if (question) {
@@ -57,6 +59,7 @@ const CodeEval = ({ noteId, sourceCode: initialCode = "", languageId, onClose })
     setIsRunning(true);
     const updatedTestCases = [...testCases];
 
+    const token = localStorage.getItem("token");
     for (let i = 0; i < updatedTestCases.length; i++) {
       const { input, expectedOutput } = updatedTestCases[i];
       try {
@@ -64,6 +67,8 @@ const CodeEval = ({ noteId, sourceCode: initialCode = "", languageId, onClose })
           language_id: language.id,
           source_code: sourceCode,
           stdin: input,
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
         });
 
         const output = (response.data.stdout || "").trim();

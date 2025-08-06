@@ -4,11 +4,11 @@ const Report = require('../models/Report');
 const Student = require('../models/Student');
 const Batch = require('../models/Batch');
 const router = express.Router();
-const Verify = require('../middleware/auth');
+const verifyAccessToken = require('../middleware/auth');
 const quizTypes = ['Quiz', 'Coding', 'Assignment']; // fixed index map
 const Admin = require('../models/Admin');
 // ✅ Create or Update report entry
-router.post('/add', async (req, res) => {
+router.post('/add', verifyAccessToken, async (req, res) => {
   try {
     const { studentId, quizType, day, marksObtained, module } = req.body;
 
@@ -41,7 +41,7 @@ router.post('/add', async (req, res) => {
 
 
 // ✅ Fetch all reports
-router.get('/all', async (req, res) => {
+router.get('/all', verifyAccessToken, async (req, res) => {
   try {
     const reports = await Report.find()
       .populate('student', 'name')
@@ -56,7 +56,7 @@ router.get('/all', async (req, res) => {
 
 
 
-router.get('/batch/:batchId', Verify, async (req, res) => {
+router.get('/batch/:batchId', verifyAccessToken, async (req, res) => {
   try {
     const { batchId } = req.params;
     const adminUserId = req.user.id; // User ID from JWT
@@ -97,7 +97,7 @@ router.get('/batch/:batchId', Verify, async (req, res) => {
 });
 
 // routes/reports.js
-router.get("/admin-leaderboard", Verify, async (req, res) => {
+router.get("/admin-leaderboard", verifyAccessToken, async (req, res) => {
   try {
     const { batchId, module } = req.query;
     const userId = req.user.id;

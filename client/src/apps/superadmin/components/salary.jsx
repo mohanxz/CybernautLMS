@@ -11,7 +11,10 @@ export default function Salary() {
   useEffect(() => { fetchAdmins(); }, []);
 
   async function fetchAdmins() {
-    const res = await API.get('/api/salary/');
+    const token = localStorage.getItem('token');
+    const res = await API.get('/api/salary/', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
     const nowMonth = new Date().getMonth();
     setAdmins(res.data.map(admin => ({
       ...admin,
@@ -20,7 +23,10 @@ export default function Salary() {
   }
 
   async function payAdmin(admin) {
-    const res = await API.post(`/api/salary/${admin._id}/pay`);
+    const token = localStorage.getItem('token');
+    const res = await API.post(`/api/salary/${admin._id}/pay`, null, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
     const options = {
       key: import.meta.env.VITE_RAZORPAY_KEY,
       amount: res.data.amount,

@@ -2,9 +2,10 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const verifyAccessToken = require('../middleware/auth');
 
 // GET /api/users?role=admin
-router.get('/', async (req, res) => {
+router.get('/', verifyAccessToken, async (req, res) => {
   try {
     const { role } = req.query;
 

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Verify = require('../middleware/auth');
+const verifyAccessToken = require('../middleware/auth');
 
 const Admin = require('../models/Admin');
 const Batch = require('../models/Batch');
@@ -8,7 +8,7 @@ const Student = require('../models/Student');
 const User = require('../models/User');
 
 // GET /api/students/my-students
-router.get('/my-students', Verify, async (req, res) => {
+router.get('/my-students', verifyAccessToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const { batchId, name = "", course = "", year = "" } = req.query;

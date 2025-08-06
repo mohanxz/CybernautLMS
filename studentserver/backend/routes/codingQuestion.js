@@ -2,9 +2,10 @@
 const express = require('express');
 const router = express.Router();
 const CodingQuestion = require('../models/Code');
+const verifyAccessToken = require('../middleware/auth');
 
 // Get coding question by noteId
-router.get("/by-note/:noteId", async (req, res) => {
+router.get("/by-note/:noteId", verifyAccessToken, async (req, res) => {
   const { noteId } = req.params;
   
 

@@ -1,10 +1,11 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const LessonPlan = require('../models/LessonPlan');
+const verifyAccessToken = require('../middleware/auth');
 
 const router = express.Router();
 
-router.get("/:batchId", async (req, res) => {
+router.get("/:batchId", verifyAccessToken, async (req, res) => {
   try {
     const { batchId } = req.params;
     

@@ -2,10 +2,10 @@ const express = require('express');
 const router = express.Router();
 const BatchEvaluation = require('../models/BatchEvaluation');
 const Student = require('../models/Student');
-
+const verifyAccessToken = require('../middleware/auth');
 // ✅ Create evaluation entry for batch
 // ✅ Create evaluation entry for batch and module
-router.post('/', async (req, res) => {
+router.post('/', verifyAccessToken, async (req, res) => {
   const { batch, module, projectS3Url } = req.body;
 
   if (!batch || !module) {
@@ -51,7 +51,7 @@ router.post('/', async (req, res) => {
 
 // ✅ Get evaluation by batch
 // GET /api/batch-evaluation/:batchId/:module
-router.get('/:batchId/:module', async (req, res) => {
+router.get('/:batchId/:module', verifyAccessToken, async (req, res) => {
   try {
     const evaluation = await BatchEvaluation.findOne({
       batch: req.params.batchId,
@@ -74,7 +74,7 @@ router.get('/:batchId/:module', async (req, res) => {
 
 
 // ✅ Update evaluation: file URLs or student marks
-router.put('/:id', async (req, res) => {
+router.put('/:id', verifyAccessToken, async (req, res) => {
   const { projectS3Url, studentMarks } = req.body;
 
   try {

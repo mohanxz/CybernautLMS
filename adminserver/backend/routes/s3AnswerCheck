@@ -1,9 +1,10 @@
 const express = require('express');
 const axios = require('axios');
 const router = express.Router();
+const verifyAccessToken = require('../middleware/auth');
 
 // Route: GET /api/s3-answers/check
-router.get('/check', async (req, res) => {
+router.get('/check', verifyAccessToken, async (req, res) => {
   const { batchName, studentName, rollNo, module } = req.query;
 
   if (!batchName || !studentName || !rollNo || !module) {

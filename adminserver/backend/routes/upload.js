@@ -21,6 +21,7 @@ const s3 = new S3Client({
 });
 
 const bucketName = process.env.S3_BUCKET;
+const verifyAccessToken = require('../middleware/auth');
 const upload = multer({ storage: multer.memoryStorage() });
 // 🔒 Sanitize function
 function sanitizeForFolderName(str) {
@@ -41,7 +42,7 @@ const uploadToS3 = async (key, buffer, contentType = 'application/pdf') => {
 };
 
 
-router.post('/upload-assignment', upload.single('file'), async (req, res) => {
+router.post('/upload-assignment', verifyAccessToken, upload.single('file'), async (req, res) => {
   const { batch, module, title } = req.query;
 
   if (!req.file || !batch || !module || !title) {
@@ -85,7 +86,7 @@ router.post('/upload-assignment', upload.single('file'), async (req, res) => {
 });
 
 // Upload Project
-router.post('/upload-project', upload.single('file'), async (req, res) => {
+router.post('/upload-project', verifyAccessToken, upload.single('file'), async (req, res) => {
   const { batch, module, studentName, rollNo } = req.query;
     console.log(batch,studentName,rollNo,module);
   if (!req.file || !batch || !module || !studentName || !rollNo) {
@@ -111,7 +112,7 @@ router.post('/upload-project', upload.single('file'), async (req, res) => {
 });
 
 // Upload Theory
-router.post('/upload-theory', upload.single('file'), async (req, res) => {
+router.post('/upload-theory', verifyAccessToken, upload.single('file'), async (req, res) => {
   const { batch, title } = req.query;
 
   if (!req.file || !batch || !title) {
@@ -137,7 +138,7 @@ router.post('/upload-theory', upload.single('file'), async (req, res) => {
 
 
 
-router.get('/assignment-question/:batch/:module/:title', (req, res) => {
+router.get('/assignment-question/:batch/:module/:title', verifyAccessToken, (req, res) => {
   const { batch, module, title } = req.params;
     const cleanBatch = sanitizeForFolderName(batch);
     const cleanModule = sanitizeForFolderName(module);
@@ -147,7 +148,7 @@ router.get('/assignment-question/:batch/:module/:title', (req, res) => {
   res.json({ url: s3Url });
 });
 
-router.get('/project-theory/:batch', (req, res) => {
+router.get('/project-theory/:batch', verifyAccessToken, (req, res) => {
   const { batch } = req.params;
   const cleanBatch = sanitizeForFolderName(batch);
 
@@ -164,7 +165,7 @@ router.get('/project-theory/:batch', (req, res) => {
   });
 });
 
-router.post('/notes/upload/:batch/:module/:title/:student/:studentid/:studentroll/:day', upload.single('file'), async (req, res) => {
+router.post('/notes/upload/:batch/:module/:title/:student/:studentid/:studentroll/:day', verifyAccessToken, upload.single('file'), async (req, res) => {
   const { batch, module, title, student, studentid, studentroll, day } = req.params;
 
   if (!req.file) return res.status(400).json({ error: 'No file' });
@@ -197,7 +198,7 @@ router.post('/notes/upload/:batch/:module/:title/:student/:studentid/:studentrol
     res.status(500).json({ error: 'Internal server error' });
   }
 });
-router.get('/evaluate/:batchId/:module/:title/:day', async (req, res) => {
+router.get('/evaluate/:batchId/:module/:title/:day', verifyAccessToken, async (req, res) => {
   const { batchId, module, title, day } = req.params;
 
   try {
@@ -262,7 +263,7 @@ router.get('/evaluate/:batchId/:module/:title/:day', async (req, res) => {
 
 
 // POST /evaluate - Save assignment marks
-router.post('/evaluate', async (req, res) => {
+router.post('/evaluate', verifyAccessToken, async (req, res) => {
   const { studentId, module, day, mark } = req.body;
 
   if (!studentId || !module || day == null || mark == null) {

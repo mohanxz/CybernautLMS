@@ -68,9 +68,10 @@ const Payment = () => {
     const fetchSalaryData = async () => {
       try {
         setLoading(true);
+        const token = localStorage.getItem('token');
         const [adminsRes, statsRes] = await Promise.all([
-          API.get("/api/salary"),
-          API.get("/api/salary/stats/payments"),
+          API.get("/api/salary", { headers: { Authorization: `Bearer ${token}` } }),
+          API.get("/api/salary/stats/payments", { headers: { Authorization: `Bearer ${token}` } }),
         ]);
         setAdmins(adminsRes.data);
         setStats(statsRes.data);
@@ -85,9 +86,10 @@ const Payment = () => {
 
   const fetchSalaryData = async () => {
     try {
+      const token = localStorage.getItem('token');
       const [adminsRes, statsRes] = await Promise.all([
-        API.get("/api/salary"),
-        API.get("/api/salary/stats/payments"),
+        API.get("/api/salary", { headers: { Authorization: `Bearer ${token}` } }),
+        API.get("/api/salary/stats/payments", { headers: { Authorization: `Bearer ${token}` } }),
       ]);
       setAdmins(adminsRes.data);
       setStats(statsRes.data);
@@ -98,7 +100,10 @@ const Payment = () => {
 
   const fetchTransactions = async (count = 10) => {
     try {
-      const res = await API.get(`/api/salary/recent-transactions?count=${count}`);
+      const token = localStorage.getItem('token');
+      const res = await API.get(`/api/salary/recent-transactions?count=${count}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setTransactions(res.data.items);
     } catch (err) {
       console.error("Failed to fetch transactions:", err);
@@ -107,9 +112,12 @@ const Payment = () => {
 
   const handleApprovePayment = async (admin) => {
     try {
-      const res = await API.post(`/api/salary/${admin._id}/pay`);
+      const token = localStorage.getItem('token');
+      const res = await API.post(`/api/salary/${admin._id}/pay`, null, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       const { orderId, amount, adminName } = res.data;
-      
+
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount,
@@ -122,6 +130,8 @@ const Payment = () => {
             paymentId: response.razorpay_payment_id,
             orderId: response.razorpay_order_id,
             signature: response.razorpay_signature,
+          }, {
+            headers: { Authorization: `Bearer ${token}` }
           });
           alert("Payment successful");
           window.location.reload();

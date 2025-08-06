@@ -30,11 +30,11 @@ useEffect(() => {
       await new Promise(resolve => setTimeout(resolve, 800));
       
       // Fetch both overview and stats
+      const token = localStorage.getItem('token');
       const [overviewRes, statsRes] = await Promise.all([
-        API.get("/api/system/overview"),
-        API.get('/api/stats')
+        API.get("/api/system/overview", { headers: { Authorization: `Bearer ${token}` } }),
+        API.get('/api/stats', { headers: { Authorization: `Bearer ${token}` } })
       ]);
-      
       setOverview(overviewRes.data);
       setStats(statsRes.data);
     } catch (err) {

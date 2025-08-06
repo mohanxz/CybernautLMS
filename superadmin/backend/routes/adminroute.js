@@ -6,6 +6,7 @@ const Batch = require('../models/Batch');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const verifyAccessToken = require('../middleware/auth');
 
 const transporter = nodemailer.createTransport({
   service: "gmail", // or use "hotmail", or configure custom SMTP
@@ -20,7 +21,7 @@ const generateRandomPassword = () => {
 };
 
 // GET all admins with user data and batch count
-router.get('/', async (req, res) => {
+router.get('/', verifyAccessToken, async (req, res) => {
   try {
     const admins = await Admin.find().populate('user', 'name email phone');
 
@@ -50,7 +51,7 @@ router.get('/', async (req, res) => {
 });
 
 // POST add new admin and create user
-router.post('/', async (req, res) => {
+router.post('/', verifyAccessToken, async (req, res) => {
   try {
     const { name, email, phone, salary, specialisation, upi, dob } = req.body;
 
@@ -117,7 +118,7 @@ router.post('/', async (req, res) => {
 });
 
 // GET single admin by ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', verifyAccessToken, async (req, res) => {
   try {
     const admin = await Admin.findById(req.params.id).populate('user', 'name email phone');
     if (!admin) return res.status(404).json({ error: 'Admin not found' });
@@ -135,7 +136,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // PUT update admin by ID
-router.put('/:id', async (req, res) => {
+router.put('/:id', verifyAccessToken, async (req, res) => {
   try {
     const updatedAdmin = await Admin.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
@@ -151,7 +152,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // DELETE admin and user by admin ID
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', verifyAccessToken, async (req, res) => {
   try {
     const admin = await Admin.findById(req.params.id);
     if (!admin) return res.status(404).json({ error: 'Admin not found' });

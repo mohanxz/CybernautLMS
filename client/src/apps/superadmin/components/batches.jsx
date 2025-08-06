@@ -79,11 +79,13 @@ const Batches = () => {
   }, []);
 
   const fetchCourses = () => {
-    API.get("/api/courses").then(res => setCourses(res.data));
+    const token = localStorage.getItem('token');
+    API.get("/api/courses", { headers: { Authorization: `Bearer ${token}` } }).then(res => setCourses(res.data));
   }
 
   const fetchStaff = () => {
-    API.get("/api/admins")
+    const token = localStorage.getItem('token');
+    API.get("/api/admins", { headers: { Authorization: `Bearer ${token}` } })
     .then(res => {
       console.log("Received Admins", res.data); // <-- add this
       setStaff(res.data);
@@ -93,7 +95,8 @@ const Batches = () => {
   }
 
   const fetchBatches = () => {
-    API.get("/api/batches")
+    const token = localStorage.getItem('token');
+    API.get("/api/batches", { headers: { Authorization: `Bearer ${token}` } })
       .then(res => {
         setBatches(res.data);
         const courses = [
@@ -136,7 +139,10 @@ const Batches = () => {
       .join("");
 
     try {
-      const res = await API.get(`/api/batches/count?courseId=${courseId}&month=${month}&year=${year}`);
+      const token = localStorage.getItem('token');
+      const res = await API.get(`/api/batches/count?courseId=${courseId}&month=${month}&year=${year}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       const count = res.data.count;
       const name = `${prefix}-${shortMonth}${shortYear}-B${count + 1}`;
       setGeneratedBatchName(name);
@@ -167,7 +173,10 @@ const Batches = () => {
     try {
       const finalBatchName = await generateBatchName(form.course, form.startDate);
       const payload = { ...form, batchName: finalBatchName };
-      const res = await API.post("/api/batches", payload);
+      const token = localStorage.getItem('token');
+      const res = await API.post("/api/batches", payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       toast.success("✅ Batch created successfully!");
       fetchBatches();
       setForm({ course: "", startDate: "", admins: [] });
@@ -185,7 +194,10 @@ const Batches = () => {
   formData.append("file", file);
   setLoading(true);
   try {
-    const res = await API.post("/api/upload/upload", formData);
+    const token = localStorage.getItem('token');
+    const res = await API.post("/api/upload/upload", formData, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
 const cleanedStudents = res.data.students.map(stu => ({
   ...stu,
   email: typeof stu.email === "object" ? stu.email.text : stu.email,
@@ -230,7 +242,10 @@ const handleSave = async () => {
 
   setSaving(true);
   try {
-    const res = await API.post("/api/students/save-selected", selectedList);
+    const token = localStorage.getItem('token');
+    const res = await API.post("/api/students/save-selected", selectedList, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
     setCredentials(res.data.credentials);
     toast.success("Students Added Successfully");
     setAdded(true); // ✅ Disable button
@@ -244,10 +259,14 @@ const handleSave = async () => {
 
   const handleDownloadCSV = async () => {
     try {
+      const token = localStorage.getItem('token');
       const res = await API.post(
         "/api/students/download-credentials",
         credentials,
-        { responseType: "blob" }
+        {
+          responseType: "blob",
+          headers: { Authorization: `Bearer ${token}` }
+        }
       );
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement("a");

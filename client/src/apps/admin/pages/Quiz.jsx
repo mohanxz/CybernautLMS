@@ -61,7 +61,9 @@ export default function AdminQuizzes() {
     const result = {};
     for (let note of noteList) {
       try {
-        const { data } = await API.get(`/api/quiz/by-note/${note._id}`);
+        const { data } = await API.get(`/api/quiz/by-note/${note._id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         result[note._id] = data;
       } catch {
         // skip errors
@@ -88,6 +90,8 @@ export default function AdminQuizzes() {
       const { data } = await API.post("/api/quiz/create", {
         noteId,
         createdBy: adminId,
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
       });
       setQuizzes((prev) => ({ ...prev, [noteId]: data.quiz }));
       setSelectedNote(noteId);
@@ -102,11 +106,17 @@ export default function AdminQuizzes() {
     if (!quizId) return;
     try {
       if (editIndex !== null) {
-        await API.put(`/api/quiz/${quizId}/question/${editIndex}`, newQuestion);
+        await API.put(`/api/quiz/${quizId}/question/${editIndex}`, newQuestion, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
       } else {
-        await API.post(`/api/quiz/${quizId}/add-question`, newQuestion);
+        await API.post(`/api/quiz/${quizId}/add-question`, newQuestion, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
       }
-      const { data } = await API.get(`/api/quiz/${quizId}`);
+      const { data } = await API.get(`/api/quiz/${quizId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setQuizzes((prev) => ({ ...prev, [selectedNote]: data }));
       setEditIndex(null);
       setNewQuestion({ question: "", options: { A: "", B: "", C: "", D: "" }, answer: "A" });

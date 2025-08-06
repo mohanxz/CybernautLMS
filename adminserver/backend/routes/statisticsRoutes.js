@@ -9,7 +9,7 @@ const Batch = require("../models/Batch");
 const User = require("../models/User");
 const verifyAccessToken = require("../middleware/auth");
 
-router.get("/marks", async (req, res) => {
+router.get("/marks", verifyAccessToken, async (req, res) => {
   try {
     const { batchId, module, type = 'Assignment' } = req.query;
 

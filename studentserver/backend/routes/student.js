@@ -4,8 +4,9 @@ const Student = require('../models/Student');
 const Batch = require('../models/Batch');
 const Course = require('../models/Course');
 const User = require('../models/User');
+const verifyAccessToken = require('../middleware/auth');
 // GET student's batch details
-router.get('/batch/:studentId', async (req, res) => {
+router.get('/batch/:studentId', verifyAccessToken, async (req, res) => {
   try {
     const student = await Student.findById(req.params.studentId).populate({
       path: 'batch',
@@ -28,14 +29,14 @@ router.get('/batch/:studentId', async (req, res) => {
   }
 });
 
-router.get('/modules/:type', async (req, res) => {
+router.get('/modules/:type', verifyAccessToken, async (req, res) => {
   const course = await Course.findOne({ course_type: req.params.type });
   if (!course) return res.status(404).json({ modules: [] });
   res.json({ modules: course.modules });
 });
 
 // GET batch by batchId (used when you already have the batch ID)
-router.get('/batch/by-id/:batchId', async (req, res) => {
+router.get('/batch/by-id/:batchId', verifyAccessToken, async (req, res) => {
   try {
     const batch = await Batch.findById(req.params.batchId)
       .populate('course')
@@ -61,7 +62,7 @@ router.get('/batch/by-id/:batchId', async (req, res) => {
   }
 });
 
-router.get("/modules-with-latest-day/:batchId", async (req, res) => {
+router.get("/modules-with-latest-day/:batchId", verifyAccessToken, async (req, res) => {
   try {
     const { batchId } = req.params;
 

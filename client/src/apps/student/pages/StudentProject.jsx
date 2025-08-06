@@ -40,21 +40,31 @@ export default function StudentProject() {
         setStudent(studentData);
         setBatch(studentData.batch);
 
-        const batchRes = await API.get(`/student/batch/by-id/${studentData.batch}`);
+        const batchRes = await API.get(`/student/batch/by-id/${studentData.batch}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         const course = batchRes.data.course;
         setBatchName(batchRes.data.batchName);
 
-        const courseRes = await API.get(`/api/courses/${course}`);
+        const courseRes = await API.get(`/api/courses/${course}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         const mods = courseRes.data.modules;
         setCourseModules(mods);
 
         // 🔁 Check existence via backend route
-        const res = await API.post("/api/project/check-submissions", {
-          batchName: batchRes.data.batchName,
-          studentName: studentData.user.name,
-          rollNo: studentData.rollNo,
-          modules: mods
-        });
+        const res = await API.post(
+          "/api/project/check-submissions",
+          {
+            batchName: batchRes.data.batchName,
+            studentName: studentData.user.name,
+            rollNo: studentData.rollNo,
+            modules: mods
+          },
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
 
         setModules(
           res.data.map((m) => ({
@@ -90,9 +100,13 @@ export default function StudentProject() {
     fd.append("file", file);
 
     try {
+      const token = localStorage.getItem("token");
       await axios.post(
         `${import.meta.env.VITE_ADMIN_API}/upload-project?batch=${batch}&module=${module}&studentName=${student.user.name}&rollNo=${student.rollNo}`,
-        fd
+        fd,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
       toast.success("Project submitted!");
       setModules((prev) =>

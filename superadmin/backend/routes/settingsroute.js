@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
-const authenticate = require('../middleware/auth');
+const verifyAccessToken = require('../middleware/auth');
 const bcrypt = require('bcrypt');
 // Get admin profile
-router.get('/me', authenticate, async (req, res) => {
+router.get('/me', verifyAccessToken, async (req, res) => {
   try {
     
     res.json({

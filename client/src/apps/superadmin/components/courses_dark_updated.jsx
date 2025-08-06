@@ -20,7 +20,10 @@ export default function Courses() {
 
   const fetchCourses = async () => {
     try {
-      const response = await axios.get('http://localhost:5005/api/courses');
+      const token = localStorage.getItem('token');
+      const response = await axios.get('http://localhost:5005/api/courses', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setCourses(response.data);
     } catch (error) {
       console.error('Error fetching courses:', error);
@@ -32,10 +35,16 @@ export default function Courses() {
     e.preventDefault();
     try {
       if (editingCourse) {
-        await axios.put(`http://localhost:5005/api/courses/${editingCourse._id}`, formData);
+        const token = localStorage.getItem('token');
+        await axios.put(`http://localhost:5005/api/courses/${editingCourse._id}`, formData, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         toast.success('Course updated successfully');
       } else {
-        await axios.post('http://localhost:5005/api/courses', formData);
+        const token = localStorage.getItem('token');
+        await axios.post('http://localhost:5005/api/courses', formData, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         toast.success('Course created successfully');
       }
       setShowModal(false);
@@ -62,7 +71,10 @@ export default function Courses() {
   const confirmDelete = async (courseId) => {
     if (window.confirm('Are you sure you want to delete this course?')) {
       try {
-        await axios.delete(`http://localhost:5005/api/courses/${courseId}`);
+        const token = localStorage.getItem('token');
+        await axios.delete(`http://localhost:5005/api/courses/${courseId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         toast.success('Course deleted successfully');
         fetchCourses();
       } catch (error) {

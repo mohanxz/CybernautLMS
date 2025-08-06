@@ -3,10 +3,10 @@ const express = require('express');
 const router = express.Router();
 const Admin = require('../models/Admin');
 const User = require('../models/User');
-const authenticate = require('../middleware/auth'); // assuming JWT middleware
+const verifyAccessToken = require('../middleware/auth');
 const bcrypt = require('bcrypt');
 // Get admin profile
-router.get('/me', authenticate, async (req, res) => {
+router.get('/me', verifyAccessToken, async (req, res) => {
   try {
     const admin = await Admin.findOne({ user: req.user.id }).populate("user", "name email");
     if (!admin) return res.status(404).json({ message: "Admin not found" });
@@ -26,7 +26,7 @@ router.get('/me', authenticate, async (req, res) => {
 
 
 // Update profile
-router.put('/me', authenticate, async (req, res) => {
+router.put('/me', verifyAccessToken, async (req, res) => {
   try {
     const { name, phone, department } = req.body;
 
@@ -49,7 +49,7 @@ router.put('/me', authenticate, async (req, res) => {
 });
 
 // POST /api/admin/add-skill
-router.post('/add-skill', authenticate, async (req, res) => {
+router.post('/add-skill', verifyAccessToken, async (req, res) => {
   let { skill } = req.body;
 
   if (!skill) return res.status(400).json({ message: "Skill is required" });

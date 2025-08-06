@@ -3,8 +3,9 @@ const router = express.Router();
 const Course = require('../models/Course');
 const Batch = require('../models/Batch');
 const Student = require('../models/Student');
+const verifyAccessToken = require('../middleware/auth');
 
-router.get('/', async (req, res) => {
+router.get('/', verifyAccessToken, async (req, res) => {
   try {
     const courses = await Course.find();
 
@@ -34,7 +35,7 @@ router.get('/', async (req, res) => {
 });
 
 
-router.get('/names', async (req, res) => {
+router.get('/names', verifyAccessToken, async (req, res) => {
   try {
     const courses = await Course.find({}, 'courseName'); // only fetch courseName field
     const courseNames = courses.map(course => course.courseName);
@@ -45,14 +46,14 @@ router.get('/names', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', verifyAccessToken, async (req, res) => {
   const { courseName, modules, image } = req.body;
   const course = new Course({ courseName, modules, image });
   await course.save();
   res.json(course);
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', verifyAccessToken, async (req, res) => {
   const { courseName, modules } = req.body;
   try {
     const course = await Course.findByIdAndUpdate(
@@ -68,7 +69,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', verifyAccessToken, async (req, res) => {
   try {
     const course = await Course.findByIdAndDelete(req.params.id);
     if (!course) return res.status(404).json({ message: "Course not found" });
@@ -84,7 +85,7 @@ router.delete('/:id', async (req, res) => {
 });
 
 // GET /api/courses/modules - Get unique list of all modules
-router.get('/modules', async (req, res) => {
+router.get('/modules', verifyAccessToken, async (req, res) => {
   try {
     const courses = await Course.find({}, 'modules'); // get only modules field
 

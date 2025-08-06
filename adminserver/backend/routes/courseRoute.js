@@ -5,7 +5,7 @@ const Course = require('../models/Course');
 const verifyAccessToken = require('../middleware/auth'); // Adjust path if needed
 
 // Get course object from batchId
-router.get('/from-batch/:batchId', async (req, res) => {
+router.get('/from-batch/:batchId', verifyAccessToken, async (req, res) => {
   try {
     const batch = await Batch.findById(req.params.batchId).populate('course');
     if (!batch) return res.status(404).json({ message: "Batch not found" });

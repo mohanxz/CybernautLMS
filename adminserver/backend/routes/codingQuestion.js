@@ -2,9 +2,10 @@
 const express = require('express');
 const router = express.Router();
 const CodingQuestion = require('../models/Code');
+const verifyAccessToken = require('../middleware/auth');
 
 // Create a new coding question for a day
-router.post('/', async (req, res) => {
+router.post('/', verifyAccessToken, async (req, res) => {
   try {
     const { noteId, title, description, language, testCases } = req.body;
 
@@ -25,7 +26,7 @@ router.post('/', async (req, res) => {
 });
 
 // Get coding question for a given noteId
-router.get('/by-note/:noteId', async (req, res) => {
+router.get('/by-note/:noteId', verifyAccessToken, async (req, res) => {
   try {
     const questions = await CodingQuestion.find({ noteId: req.params.noteId });
     res.json(questions);
@@ -37,7 +38,7 @@ router.get('/by-note/:noteId', async (req, res) => {
 
 
 // Update a coding question
-router.put('/:id', async (req, res) => {
+router.put('/:id', verifyAccessToken, async (req, res) => {
   try {
     const { title, description, language, testCases } = req.body;
     const updated = await CodingQuestion.findByIdAndUpdate(

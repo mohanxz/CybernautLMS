@@ -44,13 +44,18 @@ useEffect(() => {
   useEffect(() => {
     const fetchForumChats = async () => {
       try {
-        const { data: courses } = await axios.get(`${import.meta.env.VITE_CHAT_API}/chatrooms`);
+        const token = localStorage.getItem("token");
+        const { data: courses } = await axios.get(`${import.meta.env.VITE_CHAT_API}/chatrooms`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         const allRooms = [];
 
         for (let rawCourse of courses) {
           if (rawCourse !== 'admins') {
             const course = decodeURIComponent(rawCourse);
-            const batchListRes = await axios.get(`${import.meta.env.VITE_CHAT_API}/chatrooms/${encodeURIComponent(course)}`);
+            const batchListRes = await axios.get(`${import.meta.env.VITE_CHAT_API}/chatrooms/${encodeURIComponent(course)}`, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
             const batches = batchListRes.data;
             batches.forEach((batch) => {
               allRooms.push({
@@ -81,11 +86,16 @@ useEffect(() => {
   useEffect(() => {
     const fetchAdmins = async () => {
       try {
-        const res = await axios.get(`${import.meta.env.VITE_CHAT_API}/chatrooms/admins`);
+        const token = localStorage.getItem("token");
+        const res = await axios.get(`${import.meta.env.VITE_CHAT_API}/chatrooms/admins`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         const cleaned = res.data.map((name) => decodeURIComponent(name));
         setAdmins(cleaned);
 
-        const statusRes = await axios.get(`${import.meta.env.VITE_CHAT_API}/chatrooms/admins/status`);
+        const statusRes = await axios.get(`${import.meta.env.VITE_CHAT_API}/chatrooms/admins/status`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         const statusMap = {};
         statusRes.data.forEach(({ name, online }) => {
           statusMap[name] = online;
@@ -123,7 +133,10 @@ useEffect(() => {
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
-        const statusRes = await axios.get(`${import.meta.env.VITE_CHAT_API}/chatrooms/admins/status`);
+        const token = localStorage.getItem("token");
+        const statusRes = await axios.get(`${import.meta.env.VITE_CHAT_API}/chatrooms/admins/status`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         const statusMap = {};
         statusRes.data.forEach(({ name, online }) => {
           statusMap[name] = online;

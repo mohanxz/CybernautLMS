@@ -1,4 +1,4 @@
-const Verify = require('../middleware/auth');
+const verifyAccessToken = require('../middleware/auth');
 const express = require('express');
 const Student = require('../models/Student');
 const Report = require('../models/Report');
@@ -6,13 +6,13 @@ const Note = require('../models/Note');
 const Quiz = require('../models/Quiz');
 
 const router = express.Router();
-router.get('/:noteId', Verify, async (req, res) => {
+router.get('/:noteId', verifyAccessToken, async (req, res) => {
   const quiz = await Quiz.findOne({ noteId: req.params.noteId });
   if (!quiz) return res.status(404).json({ message: "Quiz not found" });
   res.json(quiz);
 });
 
-router.post('/submit/:noteId', Verify, async (req, res) => {
+router.post('/submit/:noteId', verifyAccessToken, async (req, res) => {
   try {
     const { answers } = req.body;
     const quiz = await Quiz.findOne({ noteId: req.params.noteId });
@@ -59,7 +59,7 @@ router.post('/submit/:noteId', Verify, async (req, res) => {
 });
 
 // Add this route in your /api/quiz router
-router.get('/by-note/:noteId', Verify, async (req, res) => {
+router.get('/by-note/:noteId', verifyAccessToken, async (req, res) => {
   try {
     const quiz = await Quiz.findOne({ noteId: req.params.noteId });
     if (!quiz) return res.status(404).json({ message: "Quiz not found" });

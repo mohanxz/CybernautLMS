@@ -4,10 +4,10 @@ const express = require('express');
 const mongoose = require('mongoose');
 const Student = require('../models/Student');
 const Report = require('../models/Report');
-
+const verifyAccessToken = require('../middleware/auth');
 const router = express.Router();
 
-router.get('/:batchId/:day', async (req, res) => {
+router.get('/:batchId/:day',verifyAccessToken, async (req, res) => {
   try {
     const { batchId, day } = req.params;
     const objectId = new mongoose.Types.ObjectId(batchId);
@@ -39,7 +39,7 @@ router.get('/:batchId/:day', async (req, res) => {
   }
 });
 
-router.post('/bulk-update', async (req, res) => {
+router.post('/bulk-update',verifyAccessToken,async (req, res) => {
   try {
     const { day, updates } = req.body;
 

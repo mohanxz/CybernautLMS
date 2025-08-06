@@ -2,9 +2,10 @@
 const express = require('express');
 const router = express.Router();
 const Quiz = require('../models/Quiz');
+const verifyAccessToken = require('../middleware/auth');
 
 // Create a new quiz with note reference
-router.post('/create', async (req, res) => {
+router.post('/create', verifyAccessToken, async (req, res) => {
   const { noteId, createdBy } = req.body;
   try {
     const quiz = new Quiz({ noteId, createdBy, questions: [] });
@@ -16,7 +17,7 @@ router.post('/create', async (req, res) => {
 });
 
 // Add questions to existing quiz
-router.post('/:quizId/add-question', async (req, res) => {
+router.post('/:quizId/add-question', verifyAccessToken, async (req, res) => {
   const { quizId } = req.params;
   const { question, options, answer } = req.body;
   try {
@@ -32,7 +33,7 @@ router.post('/:quizId/add-question', async (req, res) => {
 });
 
 // Get quiz with questions
-router.get('/:quizId', async (req, res) => {
+router.get('/:quizId', verifyAccessToken, async (req, res) => {
   const { quizId } = req.params;
   try {
     const quiz = await Quiz.findById(quizId).populate('noteId').populate('createdBy', 'name');
@@ -44,7 +45,7 @@ router.get('/:quizId', async (req, res) => {
 });
 
 // Get quiz by noteId (to fetch existing quiz for a note)
-router.get('/by-note/:noteId', async (req, res) => {
+router.get('/by-note/:noteId', verifyAccessToken, async (req, res) => {
   const { noteId } = req.params;
   try {
     const quiz = await Quiz.findOne({ noteId }).populate('noteId').populate('createdBy', 'name');
@@ -56,7 +57,7 @@ router.get('/by-note/:noteId', async (req, res) => {
 });
 
 // Update a specific question in a quiz
-router.put('/:quizId/question/:index', async (req, res) => {
+router.put('/:quizId/question/:index', verifyAccessToken, async (req, res) => {
   const { quizId, index } = req.params;
   const { question, options, answer } = req.body;
   try {

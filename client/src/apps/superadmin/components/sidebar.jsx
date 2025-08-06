@@ -39,9 +39,10 @@ export default function Sidebar({ onHover, darkMode, setDarkMode, isSidebarOpen,
   useEffect(() => {
     const fetchSuperAdmin = async () => {
       try {
+        const token = localStorage.getItem("token");
         const res = await axios.get(`${import.meta.env.VITE_LOGIN_API}/auth/superadmin/me`, {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${token}`,
           },
         });
         const superAdmin = res.data?.[0]; 
@@ -58,6 +59,9 @@ export default function Sidebar({ onHover, darkMode, setDarkMode, isSidebarOpen,
 const handleLogout = async () => {
   const token = localStorage.getItem("token");
   try {
+    await axios.post(`${import.meta.env.VITE_LOGIN_API}/auth/logout`, null, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
     localStorage.removeItem("token");
     toast.success("Logged out successfully");
     setTimeout(() => {

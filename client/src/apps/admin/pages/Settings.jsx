@@ -99,7 +99,9 @@ const Settings = () => {
       await axios.put(
         `${import.meta.env.VITE_LOGIN_API}/auth/change-password`,
         passwordForm,
-        { headers: { Authorization: `Bearer ${token}` } }
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
       toast.success("Password changed successfully!");
       setPasswordForm({
