@@ -59,7 +59,18 @@ const CertificatePage = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      await API.post('/api/superadmin/generate', { students: selected }, {
+      // Find the batchId of the first selected student (all selected students are from the same batch)
+      const selectedStudent = data
+        .flatMap(d => d.eligible)
+        .find(s => selected.includes(s._id));
+      if (!selectedStudent) {
+        toast.error('Selected student not found');
+        setLoading(false);
+        return;
+      }
+      console.log("Selected student:", selectedStudent);
+      const batchId = selectedStudent.batch.id || selectedStudent.batch._id;
+      await API.post(`/api/certificates/generate/batch/${batchId}`, { students: selected }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast.success('Certificates generated!');

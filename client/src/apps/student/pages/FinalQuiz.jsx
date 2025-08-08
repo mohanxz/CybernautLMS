@@ -23,11 +23,12 @@ const FinalQuiz = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
         setQuiz(res.data);
+        
         setAnswers(new Array(res.data.questions.length).fill(null));
         setTimer(res.data.questions.length * 60); // 60s per question
       } catch (err) {
         toast.error("Quiz not available.");
-        navigate("/final-assignment");
+        navigate("/student/theory");
       }
     };
 
@@ -65,7 +66,7 @@ const FinalQuiz = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       toast.success("Quiz submitted successfully!");
-      navigate("/final-assignment");
+      navigate("/student/theory");
     } catch (err) {
       toast.error("Submission failed.");
       console.error(err);
@@ -83,6 +84,10 @@ const FinalQuiz = () => {
   if (!quiz) return <div className="text-center mt-10 text-gray-600">Loading quiz...</div>;
 
   const currentQuestion = quiz.questions[currentQ];
+  // Always convert options object to array for rendering
+  const optionEntries = currentQuestion && currentQuestion.options
+    ? Object.entries(currentQuestion.options)
+    : [];
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
@@ -122,11 +127,11 @@ const FinalQuiz = () => {
             </h2>
 
             <div className="space-y-3">
-              {currentQuestion.options.map((option, idx) => (
+              {optionEntries.map(([key, option]) => (
                 <label
-                  key={idx}
+                  key={key}
                   className={`flex items-center p-4 border rounded-lg cursor-pointer transition-all duration-200 ${
-                    answers[currentQ] === option
+                    answers[currentQ] === key
                       ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                       : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
                   }`}
@@ -134,8 +139,8 @@ const FinalQuiz = () => {
                   <input
                     type="radio"
                     name={`question-${currentQ}`}
-                    value={option}
-                    checked={answers[currentQ] === option}
+                    value={key}
+                    checked={answers[currentQ] === key}
                     onChange={(e) => handleAnswerChange(e.target.value)}
                     className="mr-3 text-blue-600"
                   />

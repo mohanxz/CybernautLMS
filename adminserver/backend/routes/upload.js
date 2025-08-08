@@ -111,30 +111,32 @@ router.post('/upload-project', verifyAccessToken, upload.single('file'), async (
   }
 });
 
-// Upload Theory
-router.post('/upload-theory', verifyAccessToken, upload.single('file'), async (req, res) => {
-  const { batch, title } = req.query;
-
-  if (!req.file || !batch || !title) {
+router.post('/upload-project', verifyAccessToken, upload.single('file'), async (req, res) => {
+  const { batch, module, studentName, rollNo } = req.query;
+    console.log(batch,studentName,rollNo,module);
+  if (!req.file || !batch || !module || !studentName || !rollNo) {
     return res.status(400).json({ error: 'Missing file or required params' });
   }
 
   try {
-    const batchDoc = await Batch.findById(batch);
+    const batchDoc = await Batch.findById(batch).populate("course");
     if (!batchDoc) return res.status(404).json({ error: 'Batch not found' });
 
-    const cleanBatch = sanitizeForFolderName(batchDoc.batchName);
-    const cleanTitle = sanitizeForFolderName(title);
+    const cleanBatch = sanitizeForFolderName(batchDoc.batchName); // e.g. FS-JUL25-B1
+    const cleanModule = sanitizeForFolderName(module);
+    const cleanStudent = sanitizeForFolderName(`${studentName}_${rollNo}`);
 
-    const key = `${cleanBatch}/theory/${cleanTitle}.pdf`;
-    const s3Url = await uploadToS3(key, req.file.buffer); // ✅ fixed
-
-    res.json({ message: 'Theory uploaded successfully', s3path: s3Url });
+    const key = `${cleanBatch}/${cleanModule}/evaluation/project/answers/${cleanStudent}/answer.pdf`;
+    const s3Url = await uploadToS3(key, req.file.buffer);
+    console.log(key);
+    res.json({ message: 'Project uploaded successfully', s3path: s3Url });
   } catch (err) {
     console.error('Upload failed:', err);
-    res.status(500).json({ error: 'Failed to upload theory' });
+    res.status(500).json({ error: 'Failed to upload project' });
   }
 });
+
+
 
 
 
@@ -167,7 +169,8 @@ router.get('/project-theory/:batch', verifyAccessToken, (req, res) => {
 
 router.post('/notes/upload/:batch/:module/:title/:student/:studentid/:studentroll/:day', verifyAccessToken, upload.single('file'), async (req, res) => {
   const { batch, module, title, student, studentid, studentroll, day } = req.params;
-
+  console.log(batch, module, title, student, studentid, studentroll, day);
+  console.log("Uploading notes for:", student, studentid, studentroll, day);
   if (!req.file) return res.status(400).json({ error: 'No file' });
 
   const cleanBatch = sanitizeForFolderName(batch);
@@ -188,8 +191,18 @@ router.post('/notes/upload/:batch/:module/:title/:student/:studentid/:studentrol
 
     // Create or update Report
     let report = await Report.findOne({ student: studentid, module, day });
-    report.marksObtained = [-2, -2, -1];
-    await report.save();
+    if (report) {
+      report.marksObtained[2] = -1;
+      await report.save();
+    } else {
+      report = new Report({
+        student: studentid,
+        module,
+        day,
+        marksObtained: [-2, -2, -1]
+      });
+      await report.save();
+    }
 
     const url = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
     res.json({ message: 'Answer uploaded and report saved', url });
@@ -198,6 +211,7 @@ router.post('/notes/upload/:batch/:module/:title/:student/:studentid/:studentrol
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 router.get('/evaluate/:batchId/:module/:title/:day', verifyAccessToken, async (req, res) => {
   const { batchId, module, title, day } = req.params;
 
@@ -293,5 +307,28 @@ router.post('/evaluate', verifyAccessToken, async (req, res) => {
   }
 });
 
+// Upload Project Question PDF for batch evaluation
+router.post('/upload-project-question', verifyAccessToken, upload.single('file'), async (req, res) => {
+  const { batch, title } = req.query;
+  if (!req.file || !batch || !title) {
+    return res.status(400).json({ error: 'Missing file or required params' });
+  }
+
+  try {
+    const batchDoc = await Batch.findById(batch);
+    if (!batchDoc) return res.status(404).json({ error: 'Batch not found' });
+
+    const cleanBatch = sanitizeForFolderName(batchDoc.batchName);
+    const cleanModule = sanitizeForFolderName(title);
+
+    const key = `${cleanBatch}/project/${cleanModule}.pdf`;
+    const s3Url = await uploadToS3(key, req.file.buffer);
+
+    res.json({ message: 'Project question uploaded successfully', s3path: s3Url });
+  } catch (err) {
+    console.error('Upload project question failed:', err);
+    res.status(500).json({ error: 'Failed to upload project question' });
+  }
+});
 
 module.exports = router;

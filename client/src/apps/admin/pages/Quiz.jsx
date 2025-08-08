@@ -3,6 +3,8 @@ import API from "../api";
 import { FaPlus, FaEdit, FaTimes } from "react-icons/fa";
 import { useParams } from "react-router-dom";
 
+import { toast } from "react-toastify";
+
 export default function AdminQuizzes() {
   const { batchId } = useParams();
   const token = localStorage.getItem("token");
@@ -72,6 +74,27 @@ export default function AdminQuizzes() {
     setQuizzes(result);
   };
 
+  // Fetch final assignment questions when selectedModule changes
+  useEffect(() => {
+    if (!selectedModule) {
+      setFinalQuestions([]);
+      return;
+    }
+    const fetchFinalQuestions = async () => {
+      try {
+        const res = await API.get(
+          `/api/final-assignment/${batchId}/${selectedModule}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setFinalQuestions(res.data.questions || []);
+      } catch (err) {
+        // If not found, set empty
+        setFinalQuestions([]);
+      }
+    };
+    fetchFinalQuestions();
+  }, [batchId, selectedModule, token]);
+
   useEffect(() => {
     fetchModules();
   }, [fetchModules]);
@@ -81,38 +104,40 @@ export default function AdminQuizzes() {
   }, [fetchNotes]);
 
   const openQuizModal = async (noteId) => {
-    if (quizzes[noteId]) {
-      setSelectedNote(noteId);
-      setQuizModalOpen(true);
-      return;
-    }
-    try {
-      const { data } = await API.post("/api/quiz/create", {
-        noteId,
-        createdBy: adminId,
-      }, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setQuizzes((prev) => ({ ...prev, [noteId]: data.quiz }));
-      setSelectedNote(noteId);
-      setQuizModalOpen(true);
-    } catch (err) {
-      console.error("Quiz creation failed", err);
-    }
+    console.log("Opening quiz modal for note:", noteId);
+    setSelectedNote(noteId);
+    setQuizModalOpen(true);
   };
 
   const handleAddOrUpdateQuestion = async () => {
-    const quizId = quizzes[selectedNote]?._id;
-    if (!quizId) return;
+    if (!selectedNote) return;
+    if (!newQuestion.question.trim()) {
+      toast.error("Question cannot be empty.");
+      return;
+    }
     try {
+      let quizId = quizzes[selectedNote]?._id;
+      // If no quiz exists, create it first
+      if (!quizId) {
+        const createRes = await API.post("/api/quiz/create", {
+          noteId: selectedNote,
+          createdBy: adminId,
+        }, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        quizId = createRes.data.quiz._id;
+        setQuizzes((prev) => ({ ...prev, [selectedNote]: createRes.data.quiz }));
+      }
       if (editIndex !== null) {
         await API.put(`/api/quiz/${quizId}/question/${editIndex}`, newQuestion, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        toast.success("Question updated successfully.");
       } else {
         await API.post(`/api/quiz/${quizId}/add-question`, newQuestion, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        toast.success("Question added successfully.");
       }
       const { data } = await API.get(`/api/quiz/${quizId}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -122,6 +147,7 @@ export default function AdminQuizzes() {
       setNewQuestion({ question: "", options: { A: "", B: "", C: "", D: "" }, answer: "A" });
     } catch (err) {
       console.error("Failed to add/update question", err);
+      toast.error("Failed to add/update question. Please try again.");
     }
   };
 
@@ -137,6 +163,10 @@ export default function AdminQuizzes() {
   };
 
   const handleFinalAddOrUpdate = async () => {
+    if (!finalNewQuestion.question.trim()) {
+      toast.error("Question cannot be empty.");
+      return;
+    }
     try {
       let updatedQuestions = [...finalQuestions];
       if (finalEditIndex !== null) {
@@ -145,16 +175,57 @@ export default function AdminQuizzes() {
         updatedQuestions.push(finalNewQuestion);
       }
 
-      await API.post(
-        `/api/final-assignment/${batchId}/${selectedModule}`,
-        { questions: updatedQuestions },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      // Check if final assignment exists
+      let exists = false;
+      let response;
+      try {
+        response = await API.get(
+          `/api/final-assignment/${batchId}/${selectedModule}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        exists = Array.isArray(response.data.questions);
+        
+        console.log("Final assignment questions:", response.data.questions);
+      } catch (err) {
+        // If 404, treat as not exists, else show error
+        if (err.response && err.response.status !== 404) {
+          toast.error("Error checking final assignment existence.");
+          return;
+        }
+      }
 
-      setFinalQuestions(updatedQuestions);
+      let saveRes;
+      if (exists) {
+        // Update existing final assignment
+        
+        saveRes = await API.put(
+          `/api/final-assignment/${batchId}/${selectedModule}`,
+          { questions: updatedQuestions },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        toast.success(finalEditIndex !== null ? "Question updated successfully." : "Question added successfully.");
+      } else {
+        // Create new final assignment
+        console.log("Creating new final assignment");
+        saveRes = await API.post(
+          `/api/final-assignment/${batchId}/${selectedModule}`,
+          { questions: updatedQuestions },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        toast.success("Final assignment created and question added.");
+      }
+
+      // Use server response for updated questions if available
+      const serverQuestions = saveRes.data.questions || updatedQuestions;
+      setFinalQuestions(serverQuestions);
       setFinalNewQuestion({ question: "", options: { A: "", B: "", C: "", D: "" }, answer: "A" });
       setFinalEditIndex(null);
     } catch (err) {
+      if (err.response && err.response.data && err.response.data.message) {
+        toast.error(err.response.data.message);
+      } else {
+        toast.error("Failed to update final assignment questions. Please try again.");
+      }
       console.error("Failed to update final assignment questions", err);
     }
   };
@@ -221,7 +292,7 @@ export default function AdminQuizzes() {
       )}
 
       {/* Quiz Modal */}
-      {quizModalOpen && selectedNote && quizzes[selectedNote] && (
+      {quizModalOpen && selectedNote && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-start pt-20 z-50 overflow-y-auto">
           <div className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[80vh] overflow-y-auto p-6 relative mx-4 sm:mx-0">
             <button
@@ -234,7 +305,7 @@ export default function AdminQuizzes() {
             <h3 className="text-xl font-bold mb-4 truncate">Quiz for Note</h3>
 
             <div className="space-y-4">
-              {quizzes[selectedNote].questions.map((q, idx) => (
+              {(quizzes[selectedNote]?.questions || []).map((q, idx) => (
                 <div
                   key={idx}
                   className="border rounded-lg p-3 bg-gray-50 dark:bg-gray-800 border-gray-300 dark:border-gray-700"

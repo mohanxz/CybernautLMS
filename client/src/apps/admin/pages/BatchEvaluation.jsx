@@ -115,7 +115,7 @@ const BatchEvaluation = () => {
 
     try {
       const res = await API.post(
-        `/upload-project?batch=${batchId}&title=${selectedModule}`,
+        `/upload-project-question?batch=${batchId}&title=${selectedModule}`,
         formDataUpload,
         {
           headers: {

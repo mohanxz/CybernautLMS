@@ -7,11 +7,11 @@ const Report = require('../models/Report');
 const BatchEvaluation = require('../models/BatchEvaluation');
 const { generatePDF } = require('../utils/generatePDF');
 const { sendMail } = require('../utils/sendMail');
-
+const verifyAccessToken = require('../middleware/auth');
 
 // ✅ Get eligible students
 // ✅ Modified GET /eligible route
-router.get('/eligible', async (req, res) => {
+router.get('/eligible', verifyAccessToken, async (req, res) => {
   try {
     const batches = await Batch.find();
 
@@ -134,7 +134,7 @@ if (finalScore >= 50) {
 
 
 // GET /incomplete-batches
-router.get('/incomplete-batches', async (req, res) => {
+router.get('/incomplete-batches', verifyAccessToken, async (req, res) => {
   try {
     const batches = await Batch.find()
       .populate('course')
@@ -162,11 +162,16 @@ router.get('/incomplete-batches', async (req, res) => {
 });
 
 
-// ✅ Generate certificates
+// ✅ Generate certificates for selected students
 // POST /generate/batch/:batchId
-router.post('/generate/batch/:batchId', async (req, res) => {
+router.post('/generate/batch/:batchId', verifyAccessToken, async (req, res) => {
   try {
     const { batchId } = req.params;
+    const { students: studentIds } = req.body;
+
+    if (!Array.isArray(studentIds) || studentIds.length === 0) {
+      return res.status(400).json({ error: "No student IDs provided" });
+    }
 
     const batch = await Batch.findById(batchId)
       .populate('course')
@@ -179,52 +184,25 @@ router.post('/generate/batch/:batchId', async (req, res) => {
       return res.status(400).send('Batch module evaluations not completed by all admins');
     }
 
-
-    const evaluation = await BatchEvaluation.findOne({ batch: batchId });
-    const students = await Student.find({ batch: batchId }).populate('user');
+    // Only fetch selected students
+    const students = await Student.find({ batch: batchId, _id: { $in: studentIds } }).populate('user');
 
     const generated = [];
 
     for (let student of students) {
-      const reports = await Report.find({ student: student._id });
-
-      const studentEval = evaluation?.studentMarks.find(
-        sm => sm.student.toString() === student._id.toString()
+      await generatePDF(
+        student.user.name,
+        batch.course.courseName,
+        batch.batchName,
+        student.rollNo,
+        student.user.email
       );
-
-      if (!studentEval ||
-          studentEval.projectMarks === -1 ||
-          studentEval.theoryMarks === -1 ||
-          reports.length === 0 ||
-          reports.some(r => r.marksObtained.some(mark => mark === -1))) {
-        continue;
-      }
-
-      let codingTotal = 0, quizTotal = 0, assignmentTotal = 0;
-
-      reports.forEach(r => {
-        codingTotal += r.marksObtained[0];
-        quizTotal += r.marksObtained[1];
-        assignmentTotal += r.marksObtained[2];
+      generated.push({
+        studentName: student.user.name,
+        email: student.user.email,
+        status: "Success",
+        message: 'Certificate generated successfully'
       });
-
-      const totalMarks = codingTotal + quizTotal + assignmentTotal;
-      const normalizedScore = (totalMarks / 340) * 50;
-      const projectOutOf25 = (studentEval.projectMarks / 100) * 25;
-      const theoryOutOf25 = (studentEval.theoryMarks / 100) * 25;
-      const finalScore = normalizedScore + projectOutOf25 + theoryOutOf25;
-
-      if (finalScore >= 50) {
-        // ✅ Generate certificate PDF or link here
-        generated.push({
-          studentName: student.user.name,
-          email: student.user.email,
-          finalScore,
-          message: 'Certificate generated successfully'
-        });
-
-        // e.g. call generateCertificatePDF(student, finalScore, batch.course.courseName)
-      }
     }
 
     res.json({ batchName: batch.batchName, generated });
