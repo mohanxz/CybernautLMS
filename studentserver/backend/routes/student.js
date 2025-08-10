@@ -4,6 +4,10 @@ const Student = require('../models/Student');
 const Batch = require('../models/Batch');
 const Course = require('../models/Course');
 const User = require('../models/User');
+const Note = require('../models/Note');
+const Quiz = require('../models/Quiz'); // Quiz uses noteId
+const CodingQuestion = require('../models/Code'); // CodingQuestion uses noteId
+const CodeSubmission = require('../models/CodeSubmission'); // Assuming CodeSubmission model exists
 const verifyAccessToken = require('../middleware/auth');
 // GET student's batch details
 router.get('/batch/:studentId', verifyAccessToken, async (req, res) => {
@@ -94,6 +98,85 @@ router.get("/modules-with-latest-day/:batchId", verifyAccessToken, async (req, r
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Internal error" });
+  }
+});
+
+// Optimized overview route for batch notes/quizzes/coding for a student
+router.get('/batch/overview/:batchId/:studentId', verifyAccessToken, async (req, res) => {
+  try {
+    const { batchId, studentId } = req.params;
+    // Get batch and its modules
+    const batch = await Batch.findById(batchId)
+      .populate('course')
+      .populate('admins.admin', 'name email');
+    if (!batch) return res.status(404).json({ error: 'Batch not found' });
+
+    // Get all notes for this batch, grouped by module
+    const notes = await Note.find({ batch: batchId }).lean();
+    const notesByModule = {};
+    let latestModule = null;
+    let maxOverallDay = -1;
+
+    for (const adminObj of batch.admins) {
+      const moduleName = adminObj.module;
+      const moduleNotes = notes.filter(n => n.module === moduleName);
+      const maxDay = Math.max(...moduleNotes.map(note => note.day || 0), 0);
+
+      if (maxDay > maxOverallDay) {
+        maxOverallDay = maxDay;
+        latestModule = moduleName;
+      }
+
+      notesByModule[moduleName] = {
+        today: moduleNotes.filter(note => note.day === maxDay),
+        others: moduleNotes.filter(note => note.day !== maxDay)
+      };
+    }
+
+    // For each note, fetch quiz, coding question, and coding submission status
+    const quizzesMap = {};
+    const codingQuestionsMap = {};
+
+    for (const module in notesByModule) {
+      for (const note of [...notesByModule[module].today, ...notesByModule[module].others]) {
+        // Quiz (correct field: noteId)
+        const quiz = await Quiz.findOne({ noteId: note._id }).lean();
+        if (quiz?._id) quizzesMap[note._id] = quiz;
+
+        // Coding Question (correct field: noteId)
+        const codingQuestion = await CodingQuestion.findOne({ noteId: note._id }).lean();
+        if (codingQuestion?._id) {
+          // Submission status (noteId and studentId)
+          const submission = await CodeSubmission.findOne({ noteId: note._id, studentId });
+          codingQuestionsMap[note._id] = {
+            ...codingQuestion,
+            submitted: !!submission
+          };
+        }
+      }
+    }
+
+    res.json({
+      batch: {
+        _id: batch._id,
+        batchName: batch.batchName,
+        startDate: batch.startDate,
+        courseName: batch.course?.courseName || '',
+        course: batch.course?._id || '',
+        admins: batch.admins.map(a => ({
+          module: a.module,
+          name: a.admin?.name || 'Unknown',
+          email: a.admin?.email || 'N/A'
+        }))
+      },
+      notesMap: notesByModule,
+      quizzesMap,
+      codingQuestionsMap,
+      latestModule
+    });
+  } catch (err) {
+    console.error('Error in batch overview:', err);
+    res.status(500).json({ error: 'Server error', details: err.message });
   }
 });
 

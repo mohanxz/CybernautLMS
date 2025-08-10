@@ -71,96 +71,32 @@ export default function StudentBatch() {
   }, [navigate]);
 
   useEffect(() => {
-    const fetchBatchAndNotes = async () => {
+    const fetchBatchOverview = async () => {
       try {
-        if (!student) return; // ⛳ wait for student before proceeding
+        if (!student) return;
         setLoading(true);
-
-        const res = await api.get(`/student/batch/by-id/${batchId}`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-        });
-        setBatch(res.data);
-        console.log("Batch data:", res.data);
         const token = localStorage.getItem('token');
-        const allNotes = {};
-        let latestModule = null;
-        let maxOverallDay = -1;
-
-        for (const adminObj of res.data.admins) {
-          const moduleName = adminObj.module;
-          const noteRes = await api.get(`/notes/${batchId}/${moduleName}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-
-          const notes = Array.isArray(noteRes.data) ? noteRes.data : noteRes.data.notes || [];
-          const maxDay = Math.max(...notes.map(note => note.day || 0));
-
-          if (maxDay > maxOverallDay) {
-            maxOverallDay = maxDay;
-            latestModule = moduleName;
-          }
-
-          allNotes[moduleName] = {
-            today: notes.filter(note => note.day === maxDay),
-            others: notes.filter(note => note.day !== maxDay)
-          };
-        }
-
-        const quizMap = {};
-        for (const module in allNotes) {
-          for (const note of [...allNotes[module].today, ...allNotes[module].others]) {
-            try {
-              const res = await api.get(`/api/quiz/by-note/${note._id}`, {
-                headers: { Authorization: `Bearer ${token}` },
-              });
-              if (res.data?._id) {
-                quizMap[note._id] = res.data;
-              }
-            } catch {
-              console.warn("No quiz uploaded for this note");
-            }
-          }
-        }
-
-        const codingMap = {};
-        for (const module in allNotes) {
-          for (const note of [...allNotes[module].today, ...allNotes[module].others]) {
-            try {
-              const res = await api.get(`/api/coding-question/by-note/${note._id}`, {
-                headers: { Authorization: `Bearer ${token}` },
-              });
-              if (res.data?._id) {
-                const codingQuestion = res.data;
-
-                // Fetch submission status only when student is available
-                const statusRes = await api.get(
-                  `/api/coding/submission-status/${note._id}/${student._id}`,
-                  { headers: { Authorization: `Bearer ${token}` } }
-                );
-
-                codingMap[note._id] = {
-                  ...codingQuestion,
-                  submitted: statusRes.data.submitted,
-                };
-              }
-            } catch {
-              console.warn("No coding question or submission status for this note");
-            }
-          }
-        }
-
-        setCodingQuestionsMap(codingMap);
-        setNotesMap(allNotes);
-        setQuizzesMap(quizMap);
-        if (latestModule) setActiveModule(latestModule);
+        const res = await api.get(
+          `/student/batch/overview/${batchId}/${student._id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setBatch(res.data.batch);
+        setNotesMap(res.data.notesMap);
+        setQuizzesMap(res.data.quizzesMap);
+        setCodingQuestionsMap(res.data.codingQuestionsMap);
+        console.log("Batch overview data:", res.data.batch);
+        console.log("Notes map:", res.data.notesMap);
+        console.log("Quizzes map:", res.data.quizzesMap);
+        console.log("Coding questions map:", res.data.codingQuestionsMap);
+        if (res.data.latestModule) setActiveModule(res.data.latestModule);
       } catch (err) {
-        console.error('Error loading batch or notes:', err);
+        console.error('Error loading batch overview:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    if (batchId && student) fetchBatchAndNotes();
+    if (batchId && student) fetchBatchOverview();
   }, [batchId, student]);
 
   useEffect(() => {
@@ -203,6 +139,7 @@ export default function StudentBatch() {
           `${import.meta.env.VITE_ADMIN_API}/assignment-question/${encodeURIComponent(batch.batchName)}/${encodeURIComponent(module)}/${encodeURIComponent(note.title)}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
+        console.log("Assignment link response:", res);
         if (res.data?.url) {
           window.open(res.data.url, '_blank');
         } else {
