@@ -13,53 +13,89 @@ const studentsRoutes = require('./routes/studentroute.js');
 const testRoutes = require('./routes/testroute.js');
 const courseRoutes = require('./routes/courseroute.js');
 const batchRoutes = require('./routes/batchroute.js');
-const uploadRoutes = require('./routes/uploadroute.js')
+const uploadRoutes = require('./routes/uploadroute.js');
 const systemRoutes = require("./routes/system.js");
 const settingsRoutes = require("./routes/settingsroute.js");
 const certificateRoutes = require("./routes/certificateroute.js");
+
 const app = express();
+
+/* ---------------------- */
+/* CORS CONFIG */
+/* ---------------------- */
 
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
   'https://cybernaut-lms-v2.onrender.com',
-  'http://51.20.34.255:3000',
-  'http://51.20.34.255:5173',
 ];
 
 app.use(cors({
   origin: function (origin, callback) {
+
     if (!origin) return callback(null, true);
+
     if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
+      callback(null, true);
     } else {
-      return callback(new Error('Not allowed by CORS'));
+      callback(new Error("Not allowed by CORS"));
     }
+
   },
+
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+
+  methods: [
+    "GET",
+    "POST",
+    "PUT",
+    "PATCH",
+    "DELETE",
+    "OPTIONS"
+  ],
+
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization"
+  ]
+
 }));
 
 app.use(express.json());
 
-mongoose.connect(process.env.MONGO_URI).then(() => console.log('MongoDB connected'))
-  .catch((err) => console.error('MongoDB connection error:', err));
+/* ---------------------- */
+/* DATABASE */
+/* ---------------------- */
 
-app.use('/api/users',userRoutes);
+mongoose.connect(process.env.MONGO_URI)
+.then(() => console.log("MongoDB connected"))
+.catch(err => console.error(err));
+
+
+/* ---------------------- */
+/* ROUTES */
+/* ---------------------- */
+
+app.use('/api/users', userRoutes);
 app.use('/api/stats', homeRoutes);
 app.use('/api/admins', adminRoutes);
-app.use('/api/salary',salaryRoutes);
+app.use('/api/salary', salaryRoutes);
 app.use('/api/students', studentsRoutes);
-app.use("/api/tests",testRoutes);
+app.use("/api/tests", testRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/batches', batchRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use("/api/system", systemRoutes);
-app.use('/api/settings',settingsRoutes);
-
+app.use('/api/settings', settingsRoutes);
 app.use("/api/certificates", certificateRoutes);
 
 
-const PORT = process.env.PORT
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+/* ---------------------- */
+/* SERVER */
+/* ---------------------- */
+
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});

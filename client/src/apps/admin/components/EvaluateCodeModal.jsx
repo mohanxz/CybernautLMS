@@ -1,25 +1,25 @@
 // components/EvaluateCodeModal.jsx
-import React, { useState } from 'react';
-import axios from 'axios';
-import API from '../api'; // Adjust the import based on your API setup
-import { toast } from 'react-toastify';
+import React, { useState } from "react";
+import axios from "axios";
+import API from "../api"; // Adjust the import based on your API setup
+import { toast } from "react-toastify";
 import CodeEval from "./CodeEval";
 
 export default function EvaluateCodeModal({ data, onClose, module }) {
-  
   const [marks, setMarks] = useState({});
   const [submittingStudentId, setSubmittingStudentId] = useState(null);
   const [checkOutputData, setCheckOutputData] = useState(null);
 
   const handleMarksChange = (studentId, value) => {
-    setMarks(prev => ({ ...prev, [studentId]: value }));
+    setMarks((prev) => ({ ...prev, [studentId]: value }));
   };
 
   const handleCheckOutput = async (studentId) => {
     try {
       const token = localStorage.getItem("token");
-      const res = await API.get(`/api/codeEval/${data.noteId}/${studentId}`,
-        { headers: { Authorization: `Bearer ${token}` } });
+      const res = await API.get(`/api/codeEval/${data.noteId}/${studentId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setCheckOutputData({ ...res.data, studentId });
     } catch (err) {
       console.error("Failed to fetch submission", err);
@@ -49,7 +49,7 @@ export default function EvaluateCodeModal({ data, onClose, module }) {
       };
 
       await API.post(`/api/codeEval/save`, payload, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       toast.success("Coding mark saved");
     } catch (err) {
@@ -63,19 +63,20 @@ export default function EvaluateCodeModal({ data, onClose, module }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 pt-24">
       <div className="bg-white rounded-xl w-full max-w-5xl p-6 relative dark:bg-black dark:text-white">
-        <button className="absolute top-4 right-6 text-xl" onClick={onClose}>✕</button>
+        <button className="absolute top-4 right-6 text-xl" onClick={onClose}>
+          ✕
+        </button>
         <h2 className="text-2xl font-bold mb-6 text-indigo-600">
-          Evaluate Code – {data?.title || 'Coding Question'}
+          Evaluate Code – {data?.title || "Coding Question"}
         </h2>
 
         {checkOutputData ? (
           <CodeEval
-  onClose={() => setCheckOutputData(null)}
-  sourceCode={checkOutputData.code}
-  languageId={checkOutputData.language}
-  noteId={data.noteId} // ✅ Add this line so test cases can be fetched
-/>
-
+            onClose={() => setCheckOutputData(null)}
+            sourceCode={checkOutputData.code}
+            languageId={checkOutputData.language}
+            noteId={data.noteId} //  Add this line so test cases can be fetched
+          />
         ) : (
           <>
             {data?.submissions?.length === 0 ? (
@@ -109,7 +110,7 @@ export default function EvaluateCodeModal({ data, onClose, module }) {
                           type="number"
                           min={0}
                           max={10}
-                          value={marks[sub.studentId] || ''}
+                          value={marks[sub.studentId] || ""}
                           onChange={(e) =>
                             handleMarksChange(sub.studentId, e.target.value)
                           }
@@ -125,13 +126,13 @@ export default function EvaluateCodeModal({ data, onClose, module }) {
                           }
                           className={`px-3 py-1 text-white rounded ${
                             submittingStudentId === sub.studentId
-                              ? 'bg-gray-400 cursor-not-allowed'
-                              : 'bg-green-600 hover:bg-green-700'
+                              ? "bg-gray-400 cursor-not-allowed"
+                              : "bg-green-600 hover:bg-green-700"
                           }`}
                         >
                           {submittingStudentId === sub.studentId
-                            ? 'Saving...'
-                            : 'Save'}
+                            ? "Saving..."
+                            : "Save"}
                         </button>
                       </td>
                     </tr>

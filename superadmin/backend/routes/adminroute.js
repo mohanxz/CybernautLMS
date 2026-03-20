@@ -9,12 +9,13 @@ const nodemailer = require('nodemailer');
 const verifyAccessToken = require('../middleware/auth');
 
 const transporter = nodemailer.createTransport({
-  service: "gmail", // or use "hotmail", or configure custom SMTP
+  service: "gmail",
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
 });
+
 // Utility to generate random password
 const generateRandomPassword = () => {
   return crypto.randomBytes(6).toString('hex'); // 12-char hex string
@@ -23,25 +24,40 @@ const generateRandomPassword = () => {
 // GET all admins with user data and batch count
 router.get('/', verifyAccessToken, async (req, res) => {
   try {
-    const admins = await Admin.find().populate('user', 'name email phone');
+  const admins = await Admin.find().populate('user', 'name email phone');
 
-    const enriched = await Promise.all(admins.map(async (admin) => {
-      const batchCount = await Batch.countDocuments({ "admins.admin": admin.user._id });
+const enriched = await Promise.all(
+  admins
+    .filter(admin => admin.user) // prevent null crash
+    .map(async (admin) => {
+
+      const batchCount = await Batch.countDocuments({
+        "admins.admin": admin.user._id
+      });
 
       return {
         _id: admin._id,
         dob: admin.dob,
-        phone : admin.phone,
+        phone: admin.phone,
         salary: admin.salary,
         specialisation: admin.specialisation,
         upi: admin.upi,
+        department: admin.department,
         paidForMonth: admin.paidForMonth,
+        courseStatus: admin.courseStatus,
+        courseCompletionDate: admin.courseCompletionDate,
+        lastOrderId: admin.lastOrderId,
+        lastPaymentId: admin.lastPaymentId,
+        invoiceId: admin.invoiceId,
         createdAt: admin.createdAt,
         updatedAt: admin.updatedAt,
         user: admin.user,
-        batchCount
+        batchCount,
+        name: admin.user.name,
+        email: admin.user.email
       };
-    }));
+    })
+);
 
     res.json(enriched);
   } catch (err) {
@@ -53,11 +69,15 @@ router.get('/', verifyAccessToken, async (req, res) => {
 // POST add new admin and create user
 router.post('/', verifyAccessToken, async (req, res) => {
   try {
-    const { name, email, phone, salary, specialisation, upi, dob } = req.body;
+    const { name, email, phone, salary, specialisation, upi, dob, department } = req.body;
+
+    // Validate required fields
+    if (!name || !email || !phone || !salary || !specialisation || !upi || !dob) {
+      return res.status(400).json({ error: "All fields are required" });
+    }
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
-    console.log(existingUser);
     if (existingUser) return res.status(400).json({ error: "Email already registered." });
 
     // Generate random password & hash
@@ -73,46 +93,87 @@ router.post('/', verifyAccessToken, async (req, res) => {
     });
     const savedUser = await user.save();
 
-    // Create admin
+    // Create admin with salary tracking
     const newAdmin = new Admin({
       user: savedUser._id,
-      dob,
+      dob: new Date(dob),
       phone,
-      salary,
-      specialisation,
+      salary: Number(salary),
+      specialisation: Array.isArray(specialisation) ? specialisation : [specialisation],
       upi,
-      paidForMonth: 0
+      department: department || 'General',
+      paidForMonth: -1, // Initialize as never paid
+      courseStatus: 'pending',
+      lastOrderId: null,
+      lastPaymentId: null,
+      invoiceId: null
     });
+
     const savedAdmin = await newAdmin.save();
 
+    // Populate user data for response
+    const populatedAdmin = await Admin.findById(savedAdmin._id).populate('user', 'name email phone');
+
+    // Send email with credentials
     await transporter.sendMail({
-        from: `"Cybernaut Admin" <${process.env.EMAIL_USER}>`,
-        to: email,
-        subject: "Welcome to Cybernaut LMS - Your Account Credentials",
-        html: `
-          <h3>Hello Admin ${name},</h3>
-          <p>Your account has been created on <strong>Cybernaut LMS</strong>.</p>
-          <p><strong>Username:</strong> ${email}</p>
-          <p><strong>Password:</strong> ${rawPassword}</p>
-          <p>You can log in at <a href="http://your-lms-domain.com/login">Cybernaut LMS</a></p>
-          <p>Cheers to a wonderful teaching career</p>
-          <br/>
-          <p>Regards,<br/>Cybernaut Team</p>
-        `,
-      });
+      from: `"Cybernaut Admin" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: "Welcome to Cybernaut LMS - Your Account Credentials",
+      html: `
+        <h3>Hello ${name},</h3>
+        <p>Your account has been created on <strong>Cybernaut LMS</strong>.</p>
+        
+        <h4>Login Credentials:</h4>
+        <ul>
+          <li><strong>Username:</strong> ${email}</li>
+          <li><strong>Password:</strong> ${rawPassword}</li>
+        </ul>
+        
+        <h4>Profile Details:</h4>
+        <ul>
+          <li><strong>Department:</strong> ${department || 'General'}</li>
+          <li><strong>Specialisation:</strong> ${Array.isArray(specialisation) ? specialisation.join(', ') : specialisation}</li>
+          <li><strong>Phone:</strong> ${phone}</li>
+          <li><strong>Date of Birth:</strong> ${new Date(dob).toLocaleDateString()}</li>
+        </ul>
+        
+        <h4>Salary Details:</h4>
+        <ul>
+          <li><strong>Monthly Salary:</strong> ₹${salary}</li>
+          <li><strong>UPI ID:</strong> ${upi}</li>
+          <li><strong>Payment Status:</strong> Pending first payment</li>
+          <li><strong>Course Status:</strong> Pending</li>
+        </ul>
+        
+        <p>You can log in at <a href="http://your-lms-domain.com/login">Cybernaut LMS</a></p>
+        <p>Cheers to a wonderful teaching career!</p>
+        <br/>
+        <p>Regards,<br/>Cybernaut Team</p>
+      `,
+    });
 
     res.status(201).json({
-      admin: savedAdmin,
-      user: {
-        _id: savedUser._id,
-        email: savedUser.email,
-        name: savedUser.name,
-        phone: savedUser.phone,
-      },
-      generatedPassword: rawPassword,
+      success: true,
+      message: 'Admin created successfully',
+      generatedPassword: rawPassword, // Send password to frontend
+      admin: {
+        _id: populatedAdmin._id,
+        name: populatedAdmin.user.name,
+        email: populatedAdmin.user.email,
+        phone: populatedAdmin.phone,
+        salary: populatedAdmin.salary,
+        specialisation: populatedAdmin.specialisation,
+        upi: populatedAdmin.upi,
+        department: populatedAdmin.department,
+        dob: populatedAdmin.dob,
+        paidForMonth: populatedAdmin.paidForMonth,
+        courseStatus: populatedAdmin.courseStatus,
+        user: populatedAdmin.user
+      }
     });
+
   } catch (err) {
-    console.error(err);
+    console.error('Error creating admin:', err);
     res.status(400).json({ error: err.message });
   }
 });
@@ -126,9 +187,23 @@ router.get('/:id', verifyAccessToken, async (req, res) => {
     const batchCount = await Batch.countDocuments({ "admins.admin": admin.user._id });
 
     res.json({
-      ...admin.toObject(),
+      _id: admin._id,
+      dob: admin.dob,
+      phone: admin.phone,
+      salary: admin.salary,
+      specialisation: admin.specialisation,
+      upi: admin.upi,
+      department: admin.department,
+      paidForMonth: admin.paidForMonth,
+      courseStatus: admin.courseStatus,
+      courseCompletionDate: admin.courseCompletionDate,
+      lastOrderId: admin.lastOrderId,
+      lastPaymentId: admin.lastPaymentId,
+      invoiceId: admin.invoiceId,
       user: admin.user,
-      batchCount
+      batchCount,
+      name: admin.user.name,
+      email: admin.user.email
     });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });

@@ -69,6 +69,8 @@ router.put('/:id', verifyAccessToken, async (req, res) => {
   }
 });
 
+
+
 router.delete('/:id', verifyAccessToken, async (req, res) => {
   try {
     const course = await Course.findByIdAndDelete(req.params.id);

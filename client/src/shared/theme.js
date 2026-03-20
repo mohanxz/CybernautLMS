@@ -5,7 +5,7 @@ export function initializeTheme() {
 
   if (theme === "dark") {
     document.documentElement.classList.add("dark");
-    console.log("✅ Dark mode applied");
+    console.log(" Dark mode applied");
   } else {
     document.documentElement.classList.remove("dark");
     console.log("❌ Light mode applied");
